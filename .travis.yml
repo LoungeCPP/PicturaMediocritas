@@ -1,0 +1,106 @@
+language: generic
+sudo: false
+cache:
+  apt: true
+  directories:
+    - /tmp/tools
+git:
+  submodules: false
+
+matrix:
+  include:
+    - env: LANGUAGE=C++ CXX=g++-5 CC=gcc-5
+      addons:
+        apt:
+          packages:
+            - g++-5
+            - unzip
+          sources: &sources
+            - r-packages-precise
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.8
+            - llvm-toolchain-precise-3.9
+    - env: LANGUAGE=C++ CXX=g++-6 CC=gcc-6 DEPLOY=true DEPLOY_FILE="$TRAVIS_BUILD_DIR/../pictura-mediocritas-$TRAVIS_TAG"
+      addons:
+        apt:
+          packages:
+            - g++-6
+            - unzip
+          sources: *sources
+    - env: LANGUAGE=C++ CXX=clang++-3.8 CC=clang-3.8
+      addons:
+        apt:
+          packages:
+            - clang-3.8
+            - unzip
+          sources: *sources
+    - env: LANGUAGE=C++ CXX=clang++-3.9 CC=clang-3.9
+      addons:
+        apt:
+          packages:
+            - clang-3.9
+            - unzip
+          sources: *sources
+    - env: LANGUAGE=Ruby DEPLOY=true DEPLOY_FILE="$TRAVIS_BUILD_DIR/../pictura-mediocritas-man-$TRAVIS_TAG.tbz2"
+      language: ruby
+      rvm: "2.2"
+
+before_install:
+  - if [ "$TRAVIS_SECURE_ENV_VARS" == "true" ]; then
+      openssl aes-256-cbc -K $encrypted_5d0d3df1866d_key -iv $encrypted_5d0d3df1866d_iv -in gh_rsa.enc -out gh_rsa -d;
+    fi
+
+install:
+  - if [ "$LANGUAGE" == "C++" ]; then git submodule update --init --recursive; fi
+  - if [ "$LANGUAGE" == "Ruby" ]; then gem install ronn; fi
+
+script:
+  - if [ "$LANGUAGE" == "C++" ]; then make; fi
+  -
+  - if [ "$LANGUAGE" == "Ruby" ]; then
+      mkdir man; pushd man;
+      cp ../pictura-mediocritas.md .;
+      ronn --organization="Lounge<C++>" pictura-mediocritas.md;
+      popd;
+    fi
+
+after_success:
+  - if [ "$LANGUAGE" == "C++" ] && [ "$DEPLOY" ] && [ "$TRAVIS_TAG" ]; then
+      cp "out/pictura-mediocritas" "$DEPLOY_FILE";
+      strip --strip-all --remove-section=.comment --remove-section=.note "$DEPLOY_FILE";
+    fi
+  - if [ "$LANGUAGE" == "Ruby" ] && [ "$TRAVIS_SECURE_ENV_VARS" == "true" ]; then
+      (
+        echo "Update manual for commits $TRAVIS_COMMIT_RANGE";
+        echo;
+        git log $TRAVIS_COMMIT_RANGE --pretty=oneline;
+      ) >> $TRAVIS_BUILD_DIR/../MAN_UPDATE_MSG;
+      mkdir -p ~/.ssh && cp gh_rsa ~/.ssh/id_rsa && chmod 700 ~/.ssh && chmod 600 ~/.ssh/id_rsa;
+      git clone -b man git@github.com:$TRAVIS_REPO_SLUG.git $TRAVIS_BUILD_DIR-man;
+      cp -f man/* "$TRAVIS_BUILD_DIR-man";
+      pushd "$TRAVIS_BUILD_DIR-man";
+      git config --global user.email "nabijaczleweli@gmail.com";
+      git config --global user.name "Nabijaczleweli Autouploader Bot";
+      git config --global push.default simple;
+      git add *;
+      git commit -F $TRAVIS_BUILD_DIR/../MAN_UPDATE_MSG;
+      git push;
+      popd;
+    fi
+  - if [ "$LANGUAGE" == "Ruby" ] && [ "$TRAVIS_TAG" ]; then
+      cp -r man "$TRAVIS_BUILD_DIR/../pictura-mediocritas-man-$TRAVIS_TAG";
+      pushd "$TRAVIS_BUILD_DIR/..";
+      tar -caf "pictura-mediocritas-man-$TRAVIS_TAG.tbz2" "pictura-mediocritas-man-$TRAVIS_TAG";
+      rm -rf "pictura-mediocritas-man-$TRAVIS_TAG";
+      popd;
+    fi
+
+deploy:
+  provider: releases
+  api-key:
+    secure: stxnyBJJBRCIL5CdzwQeCGwrZ9Bh1Z8jZA4ojKZ/1RzXyAV/h1g2tQnbbW7cUA7QT4AvITwRDN5CW6KzZfUAqUr2Kz0XoMuE7+zuyFUihVt6Vmilr//ZUpkTbektfJDUvfYA4P4kna9S2zUfE1sW3wGheq5lbi70UVN39Zc1d8aE2dO25DP4Hcqf2HH/sHRA+U7uyMtD75qPlGgcl4YPQaPVyuVfIthMaXYYr2Pt21qIOoMib2oMIKJWLc9ftkBQaIvs9Zt0sECMTmQhaO0li8N4ZpaxiUJsSyGxt/ZkydRjDoReJVkQQO+/p4Ed7jQp8TcaBlSmFivNyd18/L06CX2h0BiawftbtEIDC9U1Xi+7VqVWfk2kIK6MqjnY0AtdsAJmQvTq60e7O1lnHkDZTu3tvXR8v+6HQdofeUM6oU75CRXgmO+MTtxQkyB1v1tDqh7REfYHCO4Q6HKaPVGpJP5XOuY0qN9vragTP5UlVgVDYi0+jzX8zrL+gE0SKm55lYkYrfNqheCvTref1No4K92Lt5fjQbT2LSjp3b/NESvcLHiL42S7KrkhI3qFqJwEYPVXl/3eGyRp/EpGUaNdFh9eZECTBOAaGLVtHQlVgfUpoST+9fBiFuRHmSexlV19Ke3NPa2h229kuIBshFWxq3Dlk9ZJMpWXKzJII36/TAA=
+  file: "$DEPLOY_FILE"
+  skip_cleanup: true
+  on:
+    tags: true
+    condition: $DEPLOY = true

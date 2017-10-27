@@ -1,0 +1,40 @@
+version: 0.1.0-{build}
+
+skip_tags: false
+
+platform: x64
+configuration: Release
+
+clone_folder: C:\pictura-mediocritas
+
+install:
+  - set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%
+  -
+  - bash -lc "pacman --needed --noconfirm -Sy pacman-mirrors"
+  - bash -lc "pacman --noconfirm -Syyu"
+  - bash -lc "pacman --noconfirm -Su"
+
+build: off
+build_script:
+  - git submodule update --init --recursive
+  - make
+  - cp out\pictura-mediocritas.exe pictura-mediocritas.exe
+  - strip --strip-all --remove-section=.comment --remove-section=.note pictura-mediocritas.exe
+
+test: off
+
+artifacts:
+  - path: pictura-mediocritas-v0.1.0.exe
+
+deploy:
+  provider: GitHub
+  artifact: pictura-mediocritas-v0.1.0.exe
+  auth_token:
+    secure: /6TsIkMcI5dtUAvr8RJZxjUMR9uDgFLLZDyNbm5HqNCD0zbuj4TUY2JPIte4F+E7
+  on:
+    appveyor_repo_tag: true
+
+notifications:
+  - provider: Email
+    to: nabijaczleweli@gmail.com
+    on_build_status_changed: true
