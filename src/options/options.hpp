@@ -20,17 +20,35 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#include "options/options.hpp"
-#include <iostream>
+#pragma once
 
 
-int main(int argc, const char ** argv) {
-	const auto opts_r = pictura_mediocritas::options::parse(argc, argv);
-	if(std::get<1>(opts_r)) {
-		std::cerr << std::get<2>(opts_r) << '\n';
-		return std::get<1>(opts_r);
-	}
-	const auto opts = std::move(std::get<0>(opts_r));
+#include <string>
+#include <tuple>
 
-	std::cout << "Averaging " << opts.in_video << " into " << opts.out_image << ".\n";
+
+namespace pictura_mediocritas {
+	/// Representation of command-line configurable application parameters.
+	struct options {
+		/// Path to the video file to analyse.
+		///
+		/// Must exist.
+		std::string in_video;
+		/// Path to the image file to write the result to.
+		///
+		/// Parent directory must exist.
+		///
+		/// Default: `in_video` with extension replaced with `"png"`.
+		std::string out_image;
+
+
+		/// Attempt to parse command-line arguments.
+		///
+		/// On success, returns `{parsed_opts, 0, whatever}`.
+		///
+		/// On error, returns `{_invalid_, exit code != 0, error message}`.
+		static std::tuple<options, int, std::string> parse(int argc, const char * const * argv);
+	};
 }
+
+bool operator==(const pictura_mediocritas::options & lhs, const pictura_mediocritas::options & rhs);

@@ -24,8 +24,8 @@ include configMakefile
 
 
 LDAR := $(PIC) $(LNCXXAR) $(foreach l, ,-L$(OUTDIR)$(l)) $(foreach l, ,-l$(l))
-VERAR := $(foreach l,PICTURA_MEDIOCRITAS,-D$(l)_VERSION='$($(l)_VERSION)')
-INCAR := $(foreach l,$(foreach l,$(foreach l, ,$(l)/include),ext/$(l)),-isystem$(l))
+VERAR := $(foreach l,PICTURA_MEDIOCRITAS TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
+INCAR := $(foreach l,$(foreach l,$(foreach l,TCLAP,$(l)/include),ext/$(l)),-isystem$(l))
 TEST_SOURCES := $(sort $(wildcard tests/*.cpp tests/**/*.cpp tests/**/**/*.cpp tests/**/**/**/*.cpp))
 SOURCES := $(sort $(wildcard src/*.cpp src/**/*.cpp src/**/**/*.cpp src/**/**/**/*.cpp))
 
@@ -36,24 +36,21 @@ all : cpr exe tests run-tests
 clean :
 	rm -rf $(OUTDIR)
 
-run-tests : $(OUTDIR)gen-epub-book-tests$(EXE)
+run-tests : $(OUTDIR)pictura-mediocritas-tests$(EXE)
 	$^
 
-exe : $(OUTDIR)gen-epub-book$(EXE)
-tests : $(OUTDIR)gen-epub-book-tests$(EXE)
+exe : $(OUTDIR)pictura-mediocritas$(EXE)
+tests : $(OUTDIR)pictura-mediocritas-tests$(EXE)
 
 
-$(OUTDIR)gen-epub-book$(EXE) : $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,$(OBJ),$(SOURCES)))
-	@echo gen-epub-book $(SOURCES)
+$(OUTDIR)pictura-mediocritas$(EXE) : $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,$(OBJ),$(SOURCES)))
 	$(CXX) $(CXXAR) -o$@ $^ $(PIC) $(LDAR)
 
-$(OUTDIR)gen-epub-book-tests$(EXE) : $(subst tests/,$(BLDDIR)test_obj/,$(subst .cpp,$(OBJ),$(TEST_SOURCES))) $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,$(OBJ),$(filter-out src/main.cpp,$(SOURCES))))
-	@echo gen-epub-book-tests $(SOURCES)
+$(OUTDIR)pictura-mediocritas-tests$(EXE) : $(subst tests/,$(BLDDIR)test_obj/,$(subst .cpp,$(OBJ),$(TEST_SOURCES))) $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,$(OBJ),$(filter-out src/main.cpp,$(SOURCES))))
 	$(CXX) $(CXXAR) -o$@ $^ $(PIC) $(LDAR)
 
 
 $(OBJDIR)%$(OBJ) : $(SRCDIR)%.cpp
-	@echo % $(SOURCES)
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXAR) $(INCAR) $(VERAR) -c -o$@ $^
 

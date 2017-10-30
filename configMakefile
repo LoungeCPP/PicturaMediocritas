@@ -45,6 +45,7 @@ endif
 # TODO: uncomment when there's a first tag
 # PICTURA_MEDIOCRITAS_VERSION := "$(patsubst v%,%,$(shell git describe --tags --abbrev=0))"
 PICTURA_MEDIOCRITAS_VERSION := "0.1.0"
+TCLAP_VERSION := "$(shell cat ext/TCLAP/configure.in | grep AM_INIT_AUTOMAKE | sed "s/.*(tclap,\(.*\))/\1/")"
 
 OBJ := .o
 AR := ar
