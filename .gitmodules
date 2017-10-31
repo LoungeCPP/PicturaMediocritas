@@ -1,3 +1,7 @@
 [submodule "ext/TCLAP"]
 	path = ext/TCLAP
 	url = git://git.code.sf.net/p/tclap/code
+[submodule "ext/Catch2"]
+	path = ext/Catch2
+	url = https://github.com/catchorg/Catch2
+	branch = v2.0.1
