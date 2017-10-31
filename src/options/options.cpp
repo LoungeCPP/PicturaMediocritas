@@ -65,6 +65,10 @@ std::tuple<pictura_mediocritas::options, int, std::string> pictura_mediocritas::
 	return std::make_tuple(ret, 0, ""s);
 }
 
-bool operator==(const pictura_mediocritas::options & lhs, const pictura_mediocritas::options & rhs) {
+bool pictura_mediocritas::operator==(const options & lhs, const options & rhs) {
 	return lhs.in_video == rhs.in_video && lhs.out_image == rhs.out_image;
+}
+
+bool pictura_mediocritas::operator!=(const options & lhs, const options & rhs) {
+	return !(lhs == rhs);
 }

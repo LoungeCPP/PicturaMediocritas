@@ -20,60 +20,26 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#define CATCH_CONFIG_MAIN
+#include "../test_util.hpp"
+#include "util.hpp"
 #include <catch.hpp>
-
-#include "test_util.hpp"
-#include <cstdlib>
+#include <fstream>
 #include <string>
-#include <tclap/MultiArg.h>
-#include <tclap/OptionalUnlabeledTracker.h>
 
-const char * temp_dir() {
-	for(auto e : {"TEMP", "TMP"})
-		if(const auto t = std::getenv(e))
-			return t;
-	return "/tmp";
+
+using namespace std::literals;
+
+
+TEST_CASE("util::directory_exists() -- nonexistant", "[util]") {
+	const auto temp = temp_dir() + "/PicturaMediocritas/util/directory_exists/"s;
+	make_directory_recursive(temp.c_str());
+
+	REQUIRE_FALSE(pictura_mediocritas::directory_exists((temp + "nonexistant_dir").c_str()));
 }
 
+TEST_CASE("util::directory_exists() -- existant file", "[util]") {
+	const auto temp = temp_dir() + "/PicturaMediocritas/util/directory_exists/"s;
+	make_directory_recursive(temp.c_str());
 
-#ifdef _WIN32
-
-#include <windows.h>
-
-static void make_last_dir(const char * path) {
-	CreateDirectory(path, nullptr);
-}
-
-#else
-
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-static void make_last_dir(const char * path) {
-	mkdir(path, S_IRWXU);
-}
-
-#endif
-
-
-// Adapted from http://stackoverflow.com/a/7430262/2851815
-void make_directory_recursive(const char * path) {
-	std::string tmp(path);
-
-	if(tmp[tmp.size() - 1] == '/')
-		tmp[tmp.size() - 1] = 0;
-	for(char & c : tmp)
-		if(c == '/') {
-			c = 0;
-			make_last_dir(tmp.c_str());
-			c = '/';
-		}
-	make_last_dir(tmp.c_str());
-}
-
-// Will fail spuriously otherwise, becasuse statics :angery:
-void reset_TCLAP() {
-	TCLAP::OptionalUnlabeledTracker::alreadyOptional() = false;
+	REQUIRE(pictura_mediocritas::directory_exists(temp.c_str()));
 }

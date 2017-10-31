@@ -24,8 +24,8 @@ include configMakefile
 
 
 LDAR := $(PIC) $(LNCXXAR) $(foreach l, ,-L$(OUTDIR)$(l)) $(foreach l, ,-l$(l))
-VERAR := $(foreach l,PICTURA_MEDIOCRITAS TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
-INCAR := $(foreach l,$(foreach l,$(foreach l,TCLAP,$(l)/include),ext/$(l)),-isystem$(l))
+VERAR := $(foreach l,CATCH2 PICTURA_MEDIOCRITAS TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
+INCAR := $(foreach l,$(foreach l,$(foreach l,TCLAP,$(l)/include) Catch2/single_include,ext/$(l)),-isystem$(l))
 TEST_SOURCES := $(sort $(wildcard tests/*.cpp tests/**/*.cpp tests/**/**/*.cpp tests/**/**/**/*.cpp))
 SOURCES := $(sort $(wildcard src/*.cpp src/**/*.cpp src/**/**/*.cpp src/**/**/**/*.cpp))
 

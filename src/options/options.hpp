@@ -49,6 +49,7 @@ namespace pictura_mediocritas {
 		/// On error, returns `{_invalid_, exit code != 0, error message}`.
 		static std::tuple<options, int, std::string> parse(int argc, const char * const * argv);
 	};
-}
 
-bool operator==(const pictura_mediocritas::options & lhs, const pictura_mediocritas::options & rhs);
+	bool operator==(const options & lhs, const options & rhs);
+	bool operator!=(const options & lhs, const options & rhs);
+}
