@@ -27,11 +27,12 @@ LDAR := $(PIC) $(LNCXXAR) $(foreach l, ,-L$(OUTDIR)$(l)) $(foreach l, ,-l$(l))
 VERAR := $(foreach l,CATCH2 PICTURA_MEDIOCRITAS TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
 INCAR := $(foreach l,$(foreach l,$(foreach l,TCLAP,$(l)/include) Catch2/single_include,ext/$(l)),-isystem$(l))
 TEST_SOURCES := $(sort $(wildcard tests/*.cpp tests/**/*.cpp tests/**/**/*.cpp tests/**/**/**/*.cpp))
+BUILD_TEST_SOURCES := $(sort $(wildcard build-tests/*.cpp build-tests/**/*.cpp build-tests/**/**/*.cpp build-tests/**/**/**/*.cpp))
 SOURCES := $(sort $(wildcard src/*.cpp src/**/*.cpp src/**/**/*.cpp src/**/**/**/*.cpp))
 
-.PHONY : all clean cpr exe tests run-tests
+.PHONY : all clean cpr exe tests no-build-tests run-tests
 
-all : cpr exe tests run-tests
+all : cpr exe tests no-build-tests run-tests
 
 clean :
 	rm -rf $(OUTDIR)
@@ -41,6 +42,7 @@ run-tests : $(OUTDIR)pictura-mediocritas-tests$(EXE)
 
 exe : $(OUTDIR)pictura-mediocritas$(EXE)
 tests : $(OUTDIR)pictura-mediocritas-tests$(EXE)
+no-build-tests : $(subst build-tests/,$(BLDDIR)build_test_obj/,$(subst .cpp,$(OBJ),$(BUILD_TEST_SOURCES)))
 
 
 $(OUTDIR)pictura-mediocritas$(EXE) : $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,$(OBJ),$(SOURCES)))
@@ -57,3 +59,9 @@ $(OBJDIR)%$(OBJ) : $(SRCDIR)%.cpp
 $(BLDDIR)test_obj/%$(OBJ) : tests/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXAR) $(INCAR) -Isrc -c -o$@ $^
+
+$(BLDDIR)build_test_obj/%$(OBJ) : build-tests/%.cpp
+	@mkdir -p $(dir $@)
+	! $(CXX) $(CXXAR) $(INCAR) -Isrc -c -o$@ $^ 2>$(subst $(OBJ),.err_out,$@)
+	grep -q "$(shell grep ERROR_MUST_CONTAIN $^ | sed -e 's/#define ERROR_MUST_CONTAIN "//' -e 's/"$$//')" $(subst $(OBJ),.err_out,$@)
+	touch $@

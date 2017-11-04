@@ -5,6 +5,8 @@
 !src/**
 !tests
 !tests/**
+!build-tests
+!build-tests/**
 !.git*
 !.clang-format
 !*.yml
