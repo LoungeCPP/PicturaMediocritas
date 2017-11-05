@@ -7,6 +7,13 @@ cache:
 git:
   submodules: false
 
+env:
+  global:
+    - LIB_INSTALLDIR="$HOME"
+    - PATH="$LIB_INSTALLDIR/bin:$PATH"
+    - LD_LIBRARY_PATH="$LIB_INSTALLDIR/lib"
+    - FREEIMAGE_VERSION=3.17.0
+
 matrix:
   include:
     - env: LANGUAGE=C++ CXX=g++-5 CC=gcc-5
@@ -16,10 +23,12 @@ matrix:
             - g++-5
             - unzip
           sources: &sources
-            - r-packages-precise
+            - r-packages-trusty
+            - llvm-toolchain-trusty
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.8
-            - llvm-toolchain-precise-3.9
+            - llvm-toolchain-trusty-3.9
+            - llvm-toolchain-trusty-4.0
+            - llvm-toolchain-trusty-5.0
     - env: LANGUAGE=C++ CXX=g++-6 CC=gcc-6 DEPLOY=true DEPLOY_FILE="$TRAVIS_BUILD_DIR/../pictura-mediocritas-$TRAVIS_TAG"
       addons:
         apt:
@@ -27,19 +36,27 @@ matrix:
             - g++-6
             - unzip
           sources: *sources
-    - env: LANGUAGE=C++ CXX="clang++-3.8 -stdlib=libc++" CC=clang-3.8
-      addons:
-        apt:
-          packages:
-            - clang-3.8
-            - libc++-dev
-            - unzip
-          sources: *sources
     - env: LANGUAGE=C++ CXX="clang++-3.9 -stdlib=libc++" CC=clang-3.9
       addons:
         apt:
           packages:
             - clang-3.9
+            - libc++-dev
+            - unzip
+          sources: *sources
+    - env: LANGUAGE=C++ CXX="clang++-4.0 -stdlib=libc++" CC=clang-4.0
+      addons:
+        apt:
+          packages:
+            - clang-4.0
+            - libc++-dev
+            - unzip
+          sources: *sources
+    - env: LANGUAGE=C++ CXX="clang++-5.0 -stdlib=libc++" CC=clang-5.0
+      addons:
+        apt:
+          packages:
+            - clang-5.0
             - libc++-dev
             - unzip
           sources: *sources
@@ -53,11 +70,24 @@ before_install:
     fi
 
 install:
+  - mkdir -p "$LIB_INSTALLDIR/include" "$LIB_INSTALLDIR/lib"
+  - if [ "$LANGUAGE" == "C++" ]; then
+      mkdir "$HOME"; pushd "$HOME";
+      curl -SL "https://downloads.sourceforge.net/project/freeimage/Source Distribution/$FREEIMAGE_VERSION/FreeImage$(echo $FREEIMAGE_VERSION | sed 's/\.//g').zip" -o "FreeImage.zip";
+      unzip "FreeImage.zip";
+      cd FreeImage;
+      sed -i 's/%\["#R"\]/%[" \#R "]/g' Source/LibWebP/src/dsp/dsp.upsampling_mips_dsp_r2.c;
+      sed -i 's/"#R"/" \#R "/g' Source/LibWebP/src/dsp/dsp.yuv_mips_dsp_r2.c;
+      DESTDIR="$LIB_INSTALLDIR" make all;
+      cp Dist/FreeImage.h "$LIB_INSTALLDIR/include/";
+      cp Dist/libfreeimage.a "$LIB_INSTALLDIR/lib/";
+      popd;
+    fi
   - if [ "$LANGUAGE" == "C++" ]; then git submodule update --init --recursive; fi
   - if [ "$LANGUAGE" == "Ruby" ]; then gem install ronn; fi
 
 script:
-  - if [ "$LANGUAGE" == "C++" ]; then make; fi
+  - if [ "$LANGUAGE" == "C++" ]; then make ADDITIONAL_INCLUDE_DIR="$LIB_INSTALLDIR/include" ADDITIONAL_LINK_DIR="$LIB_INSTALLDIR/lib"; fi
   -
   - if [ "$LANGUAGE" == "Ruby" ]; then
       mkdir man; pushd man;

@@ -71,7 +71,6 @@ int main(int argc, const char ** argv) {
 						bytes[(y * width + x) * decltype(frame)::channels + 1] = colour.rgbGreen;
 						bytes[(y * width + x) * decltype(frame)::channels + 2] = colour.rgbBlue;
 						bytes[(y * width + x) * decltype(frame)::channels + 3] = colour.rgbReserved;
-						std::cerr << static_cast<unsigned>(colour.rgbReserved) << '\n';
 					} else {
 						std::cerr << "Failed to get pixel " << x << 'x' << y << " frame #" << i << ".\n";
 						return 1;
