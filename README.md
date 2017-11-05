@@ -20,6 +20,8 @@ Either acquire a binary release from [the releases page](https://github.com/Loun
 or build it yourself:
 
 ```sh
+# You need FreeImage to be includable and linkable
+
 $ git clone --recursive https://github.com/LoungeCPP/PicturaMediocritas
 $ cd PicturaMediocritas
 $ make

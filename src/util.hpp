@@ -24,12 +24,27 @@
 #pragma once
 
 
+#include <cstdint>
+#include <functional>
 #include <string>
+#include <FreeImage.h>
+#include <vector>
 
 
 namespace pictura_mediocritas {
+	struct quickscope_wrapper {
+		std::function<void()> func;
+
+		~quickscope_wrapper();
+	};
+
+
 	bool file_exists(const char * path);
 	bool directory_exists(const char * path);
 
+	bool has_extension(const char * path, const char * ext);
 	std::string switch_extenstion(const std::string & path, const char * new_ext);
+	FREE_IMAGE_FORMAT deduce_image_format(const char * path);
+
+	std::vector<std::uint8_t> read_file(const char * path);
 }

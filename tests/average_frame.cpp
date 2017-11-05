@@ -25,6 +25,7 @@
 
 #include "average_frame.hpp"
 #include <sstream>
+#include <type_traits>
 
 
 using namespace std::literals;
@@ -59,6 +60,51 @@ namespace Catch {
 	};
 }
 
+
+TEST_CASE("pictura_mediocritas::channels", "[average_frame]") {
+#define CHANNELS(ch)                                                                \
+	REQUIRE((pictura_mediocritas::average_frame<std::uint8_t, ch>::channels) == ch);  \
+	REQUIRE((pictura_mediocritas::average_frame<std::uint16_t, ch>::channels) == ch); \
+	REQUIRE((pictura_mediocritas::average_frame<std::uint32_t, ch>::channels) == ch); \
+	REQUIRE((pictura_mediocritas::average_frame<std::uint64_t, ch>::channels) == ch);
+
+	CHANNELS(1);
+	CHANNELS(2);
+	CHANNELS(3);
+	CHANNELS(4);
+	CHANNELS(5);
+	CHANNELS(6);
+	CHANNELS(7);
+	CHANNELS(8);
+	CHANNELS(9);
+	CHANNELS(10);
+
+	REQUIRE(pictura_mediocritas::average_frame_u64::channels == 3);
+
+#undef CHANNELS
+}
+
+TEST_CASE("pictura_mediocritas::value_type", "[average_frame]") {
+#define TYPES(t)                                                                 \
+	REQUIRE((std::is_same<pictura_mediocritas::average_frame<t>::value_type, t>::value)); \
+	REQUIRE((std::is_same<pictura_mediocritas::average_frame<t>::value_type, t>::value)); \
+	REQUIRE((std::is_same<pictura_mediocritas::average_frame<t>::value_type, t>::value)); \
+	REQUIRE((std::is_same<pictura_mediocritas::average_frame<t>::value_type, t>::value));
+
+	TYPES(std::uint8_t);
+	TYPES(std::uint16_t);
+	TYPES(std::uint32_t);
+	TYPES(std::uint64_t);
+	TYPES(std::int8_t);
+	TYPES(std::int16_t);
+	TYPES(std::int32_t);
+	TYPES(std::int64_t);
+	TYPES(std::string);
+
+	REQUIRE((std::is_same<pictura_mediocritas::average_frame_u64::value_type, std::uint64_t>::value));
+
+#undef TYPES
+}
 
 TEST_CASE("pictura_mediocritas::average_frame(width, height)", "[average_frame]") {
 	std::array<std::uint64_t, 3> zero{};

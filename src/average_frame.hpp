@@ -58,6 +58,13 @@ namespace pictura_mediocritas {
 		std::vector<AccT> pixels;
 
 	public:
+		/// How many channels the frame has.
+		constexpr static const std::size_t channels = Channels;
+
+		/// Type of each channel value.
+		using value_type = AccT;
+
+
 		/// Create a frame with the specified size.
 		average_frame(std::size_t width, std::size_t height);
 
@@ -74,7 +81,7 @@ namespace pictura_mediocritas {
 		/// Get a frame from the specified source.
 		///
 		/// The `frame` argument must be indexable by a `std::size_t` in [0; width * height * Channels) ∩ ℤ.
-		template<class FrameT>
+		template <class FrameT>
 		void process_frame(const FrameT & frame);
 
 		/// Get the average channel at the given index.
