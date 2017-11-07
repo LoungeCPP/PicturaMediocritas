@@ -78,6 +78,23 @@ install:
       cd FreeImage;
       sed -i 's/%\["#R"\]/%[" \#R "]/g' Source/LibWebP/src/dsp/dsp.upsampling_mips_dsp_r2.c;
       sed -i 's/"#R"/" \#R "/g' Source/LibWebP/src/dsp/dsp.yuv_mips_dsp_r2.c;
+      cp Source/LibRawLite/internal/dcraw_common.cpp Source/LibRawLite/internal/dcraw_common.cpp.old;
+      awk '
+        BEGIN {
+          replacing=0
+        };
+        /cp, terms/ {
+          replacing=1
+        };
+        /chood/ {
+          replacing=0
+        };
+        {
+          if(replacing)
+            $0 = gensub(/0x/, "(signed char)0x", "g");
+          print
+        }
+      ' Source/LibRawLite/internal/dcraw_common.cpp.old > Source/LibRawLite/internal/dcraw_common.cpp;
       DESTDIR="$LIB_INSTALLDIR" make all;
       cp Dist/FreeImage.h "$LIB_INSTALLDIR/include/";
       cp Dist/libfreeimage.a "$LIB_INSTALLDIR/lib/";
