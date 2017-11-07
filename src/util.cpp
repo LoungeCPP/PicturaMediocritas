@@ -26,7 +26,6 @@
 #include <cctype>
 #include <cstring>
 #include <fstream>
-#include <iterator>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -48,8 +47,10 @@ bool pictura_mediocritas::directory_exists(const char * path) {
 }
 
 bool pictura_mediocritas::has_extension(const char * path, const char * ext) {
-	const auto path_len     = std::strlen(path);
-	const auto path_ext     = std::find(std::make_reverse_iterator(path + path_len), std::make_reverse_iterator(path), '.').base();
+	const auto path_len = std::strlen(path);
+	auto path_ext       = path + path_len;
+	while(*(path_ext - 1) != '.' && path_ext - 1 != path)
+		--path_ext;
 	const auto path_ext_len = std::strlen(path_ext);
 
 	const auto ext_len = std::strlen(ext);
