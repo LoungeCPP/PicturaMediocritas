@@ -79,7 +79,7 @@ TEST_CASE("pictura_mediocritas::channels", "[average_frame]") {
 	CHANNELS(9);
 	CHANNELS(10);
 
-	REQUIRE(pictura_mediocritas::average_frame_u64::channels == 3);
+	REQUIRE(pictura_mediocritas::average_frame_u64::channels == 4);
 
 #undef CHANNELS
 }
@@ -107,12 +107,12 @@ TEST_CASE("pictura_mediocritas::value_type", "[average_frame]") {
 }
 
 TEST_CASE("pictura_mediocritas::average_frame(width, height)", "[average_frame]") {
-	std::array<std::uint64_t, 3> zero{};
+	std::array<std::uint64_t, 4> zero{};
 
 	pictura_mediocritas::average_frame_u64 hd(1280, 720);
 	REQUIRE(hd.size() == std::pair<std::size_t, std::size_t>(1280, 720));
 	REQUIRE(hd.processed_frames() == 0);
-	for(auto i = 0u; i < 1280 * 720 * 3; ++i)
+	for(auto i = 0u; i < 1280 * 720 * 4; ++i)
 		REQUIRE(hd[i] == 0);
 	for(auto i = 0u; i < 1280 * 720; ++i) {
 		INFO(i);
@@ -123,20 +123,20 @@ TEST_CASE("pictura_mediocritas::average_frame(width, height)", "[average_frame]"
 	REQUIRE(fhd.size() == std::pair<std::size_t, std::size_t>(1920, 1080));
 	REQUIRE(fhd.processed_frames() == 0);
 	REQUIRE(hd.processed_frames() == 0);
-	for(auto i = 0u; i < 1920 * 1080 * 3; ++i)
+	for(auto i = 0u; i < 1920 * 1080 * 4; ++i)
 		REQUIRE(hd[i] == 0);
 	for(auto i = 0u; i < 1920 * 1080; ++i)
 		REQUIRE(hd.pixel(i) == zero);
 }
 
 TEST_CASE("pictura_mediocritas::average_frame(size)", "[average_frame]") {
-	std::array<std::uint64_t, 3> zero{};
+	std::array<std::uint64_t, 4> zero{};
 
 	pictura_mediocritas::average_frame_u64 hd(std::make_pair(1280, 720));
 	REQUIRE(hd.size() == std::pair<std::size_t, std::size_t>(1280, 720));
 	REQUIRE(hd.processed_frames() == 0);
 	REQUIRE(hd.processed_frames() == 0);
-	for(auto i = 0u; i < 1280 * 720 * 3; ++i)
+	for(auto i = 0u; i < 1280 * 720 * 4; ++i)
 		REQUIRE(hd[i] == 0);
 	for(auto i = 0u; i < 1280 * 720; ++i)
 		REQUIRE(hd.pixel(i) == zero);
@@ -145,7 +145,7 @@ TEST_CASE("pictura_mediocritas::average_frame(size)", "[average_frame]") {
 	REQUIRE(fhd.size() == std::pair<std::size_t, std::size_t>(1920, 1080));
 	REQUIRE(fhd.processed_frames() == 0);
 	REQUIRE(hd.processed_frames() == 0);
-	for(auto i = 0u; i < 1920 * 1080 * 3; ++i)
+	for(auto i = 0u; i < 1920 * 1080 * 4; ++i)
 		REQUIRE(hd[i] == 0);
 	for(auto i = 0u; i < 1920 * 1080; ++i)
 		REQUIRE(hd.pixel(i) == zero);

@@ -41,8 +41,7 @@ namespace pictura_mediocritas {
 	/// as long as it has an `==`, arithmetical `+=` and `/` operators defined and a default constructor.
 	///
 	/// The `Channels` template argument reprensents how many channels a video has.
-	/// For example, "normal" video has 3 channels (RGB), while a GIF might have 4 (RGBA).
-	template <class AccT, std::size_t Channels = 3>
+	template <class AccT, std::size_t Channels = 4>
 	class average_frame {
 		static_assert(Channels != 0, "A zero-channel video makes no sense.");
 
