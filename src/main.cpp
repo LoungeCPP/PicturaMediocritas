@@ -22,8 +22,10 @@
 
 #include "average_frame.hpp"
 #include "options/options.hpp"
+#include "parser/multi_image.hpp"
 #include "util.hpp"
 #include <FreeImage.h>
+#include <iostream>
 
 
 int main(int argc, const char ** argv) {
@@ -42,42 +44,13 @@ int main(int argc, const char ** argv) {
 	pictura_mediocritas::average_frame_u64 frame(0, 0);
 
 	if(pictura_mediocritas::has_extension(opts.in_video.c_str(), "gif")) {
-		const auto in_video = FreeImage_OpenMultiBitmap(FIF_GIF, opts.in_video.c_str(), false, true, true, GIF_LOAD256 | GIF_PLAYBACK);
-		pictura_mediocritas::quickscope_wrapper in_video_close{[&]() { FreeImage_CloseMultiBitmap(in_video); }};
+		pictura_mediocritas::multi_image_parser parser(FreeImage_OpenMultiBitmap(FIF_GIF, opts.in_video.c_str(), false, true, true, GIF_LOAD256 | GIF_PLAYBACK),
+		                                               decltype(frame)::channels);
+		frame = decltype(frame)(parser.size());
 
-		std::vector<std::uint8_t> bytes;
-
-		const std::size_t pages = FreeImage_GetPageCount(in_video);
-		for(std::size_t i = 0; i < pages; ++i) {
-			const auto page = FreeImage_LockPage(in_video, i);
-			pictura_mediocritas::quickscope_wrapper page_unlock{[&]() { FreeImage_UnlockPage(in_video, page, false); }};
-
-			if(i == 0) {
-				const std::size_t w = FreeImage_GetWidth(page);
-				const std::size_t h = FreeImage_GetHeight(page);
-
-				frame = pictura_mediocritas::average_frame_u64(w, h);
-				bytes.resize(w * h * decltype(frame)::channels);
-			}
-
-			const auto size   = frame.size();
-			const auto width  = size.first;
-			const auto height = size.second;
-			for(auto x = 0u; x < width; ++x)
-				for(auto y = 0u; y < height; ++y) {
-					RGBQUAD colour{};
-					if(FreeImage_GetPixelColor(page, x, y, &colour)) {
-						bytes[(y * width + x) * decltype(frame)::channels]     = colour.rgbRed;
-						bytes[(y * width + x) * decltype(frame)::channels + 1] = colour.rgbGreen;
-						bytes[(y * width + x) * decltype(frame)::channels + 2] = colour.rgbBlue;
-						bytes[(y * width + x) * decltype(frame)::channels + 3] = colour.rgbReserved;
-					} else {
-						std::cerr << "Failed to get pixel " << x << 'x' << y << " frame #" << i << ".\n";
-						return 1;
-					}
-				}
-
-			frame.process_frame(bytes);
+		for(auto i = 0u; i < parser.length(); ++i) {
+			frame.process_frame(parser);
+			parser.next();
 		}
 	} else {
 		std::cerr << "Could not find codec for " << opts.in_video << ".\n";

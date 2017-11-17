@@ -84,6 +84,12 @@ namespace pictura_mediocritas {
 		template <class FrameT>
 		void process_frame(const FrameT & frame);
 
+		/// Get a frame from the specified source.
+		///
+		/// The `frame` argument must be indexable by a `std::size_t` in [0; width * height * Channels) ∩ ℤ.
+		template <class FrameT>
+		void process_frame(FrameT & frame);
+
 		/// Get the average channel at the given index.
 		///
 		/// Special case: if no frames have been processed, return 0.
