@@ -22,6 +22,7 @@
 
 #include "average_frame.hpp"
 #include "options/options.hpp"
+#include "output_image.hpp"
 #include "parser/multi_image.hpp"
 #include "util.hpp"
 #include <FreeImage.h>
@@ -57,28 +58,17 @@ int main(int argc, const char ** argv) {
 		return 1;
 	}
 
-	auto out_image = FreeImage_AllocateT(FIT_BITMAP, frame.size().first, frame.size().second, 32);
-	pictura_mediocritas::quickscope_wrapper out_image_unloader{[&]() { FreeImage_Unload(out_image); }};
 
-	RGBQUAD px{};
-	for(auto x = 0u; x < frame.size().first; ++x)
-		for(auto y = 0u; y < frame.size().second; ++y) {
-			px.rgbRed      = frame[(y * frame.size().first + x) * decltype(frame)::channels];
-			px.rgbGreen    = frame[(y * frame.size().first + x) * decltype(frame)::channels + 1];
-			px.rgbBlue     = frame[(y * frame.size().first + x) * decltype(frame)::channels + 2];
-			px.rgbReserved = frame[(y * frame.size().first + x) * decltype(frame)::channels + 3];
-			if(!FreeImage_SetPixelColor(out_image, x, y, &px))
-				std::cerr << "Failed to set pixel " << x << 'x' << y << ".\n";
-		}
-
-	const auto format = pictura_mediocritas::deduce_image_format(opts.out_image.c_str());
-	if(format != FIF_UNKNOWN) {
-		if(!FreeImage_Save(format, out_image, opts.out_image.c_str())) {
+	switch(pictura_mediocritas::output_image(frame.size(), decltype(frame)::channels, frame, opts.out_image.c_str())) {
+		case pictura_mediocritas::output_image_result_t::ok:
+			break;
+		case pictura_mediocritas::output_image_result_t::deduction_error:
+			std::cerr << "Could not find write codec for " << opts.out_image << ".\n";
+			return 1;
+		case pictura_mediocritas::output_image_result_t::save_error:
 			std::cerr << "Failed to write " << opts.out_image << ".\n";
 			return 1;
-		}
-	} else {
-		std::cerr << "Could not find write codec for " << opts.out_image << ".\n";
-		return 1;
+		case pictura_mediocritas::output_image_result_t::colour_set_error:
+			return 1;
 	}
 }
