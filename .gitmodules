@@ -5,3 +5,7 @@
 	path = ext/Catch2
 	url = https://github.com/catchorg/Catch2
 	branch = v2.0.1
+[submodule "ext/progressbar-cpp"]
+	path = ext/progressbar-cpp
+	url = https://github.com/nabijaczleweli/progressbar-cpp
+	branch = v0.1.0

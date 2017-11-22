@@ -27,6 +27,7 @@
 #include "util.hpp"
 #include <FreeImage.h>
 #include <iostream>
+#include <progressbar_cpp/progressbar.hpp>
 
 
 int main(int argc, const char ** argv) {
@@ -40,18 +41,18 @@ int main(int argc, const char ** argv) {
 	FreeImage_Initialise();
 	pictura_mediocritas::quickscope_wrapper freeimage_deinitialiser{FreeImage_DeInitialise};
 
-	std::cout << "Averaging " << opts.in_video << " into " << opts.out_image << ".\n";
-
 	pictura_mediocritas::average_frame_u64 frame(0, 0);
 
 	if(pictura_mediocritas::has_extension(opts.in_video.c_str(), "gif")) {
 		pictura_mediocritas::multi_image_parser parser(FreeImage_OpenMultiBitmap(FIF_GIF, opts.in_video.c_str(), false, true, true, GIF_LOAD256 | GIF_PLAYBACK),
 		                                               decltype(frame)::channels);
+		progressbar_cpp::progressbar progress("Processing " + opts.in_video, parser.length());
 		frame = decltype(frame)(parser.size());
 
 		for(auto i = 0u; i < parser.length(); ++i) {
 			frame.process_frame(parser);
 			parser.next();
+			progress.inc();
 		}
 	} else {
 		std::cerr << "Could not find codec for " << opts.in_video << ".\n";
@@ -59,6 +60,7 @@ int main(int argc, const char ** argv) {
 	}
 
 
+	std::cout << "Writing to " << opts.out_image << '\n';
 	switch(pictura_mediocritas::output_image(frame.size(), decltype(frame)::channels, frame, opts.out_image.c_str())) {
 		case pictura_mediocritas::output_image_result_t::ok:
 			break;

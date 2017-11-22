@@ -23,16 +23,16 @@
 include configMakefile
 
 
-LDAR := $(PIC) $(LNCXXAR) $(foreach l, ,-L$(OUTDIR)$(l)) $(foreach l,$(OS_LD_LIBS) freeimage,-l$(l))
-VERAR := $(foreach l,CATCH2 PICTURA_MEDIOCRITAS TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
-INCAR := $(foreach l,$(foreach l,$(foreach l,TCLAP,$(l)/include) Catch2/single_include,ext/$(l)) $(foreach l,,$(BLDDIR)$(l)/include),-isystem$(l))
+LDAR := $(PIC) $(LNCXXAR) $(foreach l,progressbar-cpp,-L$(BLDDIR)$(l)) $(foreach l,progressbar-cpp freeimage $(OS_LD_LIBS),-l$(l))
+VERAR := $(foreach l,PICTURA_MEDIOCRITAS CATCH2 PROGRESSBAR_CPP TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
+INCAR := $(foreach l,$(foreach l,$(foreach l,progressbar-cpp progressbar-cpp/ext/progressbar TCLAP,$(l)/include) Catch2/single_include,ext/$(l)) $(foreach l,,$(BLDDIR)$(l)/include),-isystem$(l))
 TEST_SOURCES := $(sort $(wildcard tests/*.cpp tests/**/*.cpp tests/**/**/*.cpp tests/**/**/**/*.cpp))
 BUILD_TEST_SOURCES := $(sort $(wildcard build-tests/*.cpp build-tests/**/*.cpp build-tests/**/**/*.cpp build-tests/**/**/**/*.cpp))
 SOURCES := $(sort $(wildcard src/*.cpp src/**/*.cpp src/**/**/*.cpp src/**/**/**/*.cpp))
 
-.PHONY : all clean cpr exe tests no-build-tests run-tests
+.PHONY : all clean cpr progressbar-cpp exe tests no-build-tests run-tests
 
-all : cpr exe tests no-build-tests run-tests
+all : cpr progressbar-cpp exe tests no-build-tests run-tests
 
 clean :
 	rm -rf $(OUTDIR)
@@ -43,6 +43,7 @@ run-tests : $(OUTDIR)pictura-mediocritas-tests$(EXE)
 exe : $(OUTDIR)pictura-mediocritas$(EXE)
 tests : $(OUTDIR)pictura-mediocritas-tests$(EXE)
 no-build-tests : $(subst build-tests/,$(BLDDIR)build_test_obj/,$(subst .cpp,$(OBJ),$(BUILD_TEST_SOURCES)))
+progressbar-cpp : $(BLDDIR)progressbar-cpp/libprogressbar-cpp$(ARCH)
 
 
 $(OUTDIR)pictura-mediocritas$(EXE) : $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,$(OBJ),$(SOURCES)))
@@ -50,6 +51,11 @@ $(OUTDIR)pictura-mediocritas$(EXE) : $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,$(
 
 $(OUTDIR)pictura-mediocritas-tests$(EXE) : $(subst tests/,$(BLDDIR)test_obj/,$(subst .cpp,$(OBJ),$(TEST_SOURCES))) $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,$(OBJ),$(filter-out src/main.cpp,$(SOURCES))))
 	$(CXX) $(CXXAR) -o$@ $^ $(PIC) $(LDAR)
+
+$(BLDDIR)progressbar-cpp/libprogressbar-cpp$(ARCH) : ext/progressbar-cpp/Makefile
+	@mkdir -p $(abspath $(dir $@)..)
+	cd $(dir $^) && $(MAKE) static
+	mv $(dir $^)out $(dir $@)
 
 
 $(OBJDIR)%$(OBJ) : $(SRCDIR)%.cpp

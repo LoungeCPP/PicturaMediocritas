@@ -24,10 +24,12 @@ ifeq "$(OS)" "Windows_NT"
 	EXE := .exe
 	PIC :=
 	ECHO := /usr/bin/echo
+	OS_LD_LIBS := ncurses ole32
 else
 	EXE :=
 	PIC := -fPIC
 	ECHO := echo
+	OS_LD_LIBS := ncurses
 endif
 
 ifneq "$(ADDITIONAL_INCLUDE_DIR)" ""
@@ -45,10 +47,12 @@ endif
 # TODO: uncomment when there's a first tag
 # PICTURA_MEDIOCRITAS_VERSION := "$(patsubst v%,%,$(shell git describe --tags --abbrev=0))"
 PICTURA_MEDIOCRITAS_VERSION := "0.1.0"
-TCLAP_VERSION := "$(shell cat ext/TCLAP/configure.in | grep AM_INIT_AUTOMAKE | sed "s/.*(tclap,\(.*\))/\1/")"
 CATCH2_VERSION := "$(patsubst v%,%,$(shell git -C ext/Catch2 describe --tags --abbrev=0))"
+PROGRESSBAR_CPP_VERSION := "$(patsubst v%,%,$(shell git -C ext/progressbar-cpp describe --tags --abbrev=0))"
+TCLAP_VERSION := "$(shell cat ext/TCLAP/configure.in | grep AM_INIT_AUTOMAKE | sed "s/.*(tclap,\(.*\))/\1/")"
 
 OBJ := .o
+ARCH := .a
 AR := ar
 CXXAR := -O3 -fomit-frame-pointer -std=c++14 -pedantic -Wall -Wextra -pipe $(INCCXXAR) $(PIC)
 CCAR := -O3 -fomit-frame-pointer -std=c11 -pipe $(PIC)
