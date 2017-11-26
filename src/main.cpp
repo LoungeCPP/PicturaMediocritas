@@ -20,6 +20,8 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+#include "progressbar/progressbar.hpp"
+
 #include "average_frame.hpp"
 #include "options/options.hpp"
 #include "output_image.hpp"
@@ -27,7 +29,6 @@
 #include "util.hpp"
 #include <FreeImage.h>
 #include <iostream>
-#include <progressbar_cpp/progressbar.hpp>
 
 
 int main(int argc, const char ** argv) {
@@ -38,6 +39,10 @@ int main(int argc, const char ** argv) {
 	}
 	const auto opts = std::move(std::get<0>(opts_r));
 
+#ifdef _WIN32
+	CoInitialize(nullptr);
+#endif
+
 	FreeImage_Initialise();
 	pictura_mediocritas::quickscope_wrapper freeimage_deinitialiser{FreeImage_DeInitialise};
 
@@ -46,7 +51,7 @@ int main(int argc, const char ** argv) {
 	if(pictura_mediocritas::has_extension(opts.in_video.c_str(), "gif")) {
 		pictura_mediocritas::multi_image_parser parser(FreeImage_OpenMultiBitmap(FIF_GIF, opts.in_video.c_str(), false, true, true, GIF_LOAD256 | GIF_PLAYBACK),
 		                                               decltype(frame)::channels);
-		progressbar_cpp::progressbar progress("Processing " + opts.in_video, parser.length());
+		pictura_mediocritas::progressbar progress("Processing " + opts.in_video, parser.length());
 		frame = decltype(frame)(parser.size());
 
 		for(auto i = 0u; i < parser.length(); ++i) {
