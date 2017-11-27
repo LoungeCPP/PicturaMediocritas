@@ -12,12 +12,13 @@ install:
   -
   - bash -lc "pacman --needed --noconfirm -Sy pacman-mirrors"
   - bash -lc "pacman --noconfirm -Syyu"
-  - bash -lc "pacman --noconfirm -Su mingw-w64-x86_64-freeimage"
+  - bash -lc "pacman --noconfirm -Su mingw-w64-x86_64-freeimage mingw-w64-x86_64-nasm"
 
 build: off
 build_script:
   - git submodule update --init --recursive
-  - make
+  # target_os for ffmpeg's configure
+  - make target_os=mingw64
   - cp out\pictura-mediocritas.exe pictura-mediocritas-v0.1.0.exe
   - strip --strip-all --remove-section=.comment --remove-section=.note pictura-mediocritas-v0.1.0.exe
 

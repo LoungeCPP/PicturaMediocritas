@@ -48,6 +48,7 @@ endif
 # PICTURA_MEDIOCRITAS_VERSION := "$(patsubst v%,%,$(shell git describe --tags --abbrev=0))"
 PICTURA_MEDIOCRITAS_VERSION := "0.1.0"
 CATCH2_VERSION := "$(patsubst v%,%,$(shell git -C ext/Catch2 describe --tags --abbrev=0))"
+FFMPEG_VERSION := "$(patsubst n%,%,$(shell git -C ext/ffmpeg describe --tags --abbrev=0))"
 PROGRESSBAR_CPP_VERSION := "$(patsubst v%,%,$(shell git -C ext/progressbar-cpp describe --tags --abbrev=0))"
 TCLAP_VERSION := "$(shell cat ext/TCLAP/configure.in | grep AM_INIT_AUTOMAKE | sed "s/.*(tclap,\(.*\))/\1/")"
 
