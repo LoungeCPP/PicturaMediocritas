@@ -24,7 +24,7 @@ include configMakefile
 
 
 FFMPEG_PREREQUESITE_LD_LIBS := bz2 lzma z
-LDAR := $(PIC) $(LNCXXAR) $(foreach l,ffmpeg/lib progressbar-cpp,-L$(BLDDIR)$(l)) $(foreach l,progressbar-cpp avformat avcodec avutil freeimage $(FFMPEG_PREREQUESITE_LD_LIBS) $(OS_LD_LIBS),-l$(l))
+LDAR := $(PIC) $(LNCXXAR) $(foreach l,ffmpeg/lib progressbar-cpp,-L$(BLDDIR)$(l)) $(foreach l,progressbar-cpp swscale avformat avcodec avutil freeimage $(FFMPEG_PREREQUESITE_LD_LIBS) $(OS_LD_LIBS),-l$(l))
 VERAR := $(foreach l,PICTURA_MEDIOCRITAS CATCH2 PROGRESSBAR_CPP TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
 INCAR := $(foreach l,$(foreach l,$(foreach l,progressbar-cpp progressbar-cpp/ext/progressbar TCLAP,$(l)/include) Catch2/single_include,ext/$(l)) $(foreach l,ffmpeg,$(BLDDIR)$(l)/include),-isystem$(l))
 TEST_SOURCES := $(sort $(wildcard tests/*.cpp tests/**/*.cpp tests/**/**/*.cpp tests/**/**/**/*.cpp))
@@ -56,7 +56,7 @@ $(OUTDIR)pictura-mediocritas-tests$(EXE) : $(subst tests/,$(BLDDIR)test_obj/,$(s
 
 $(BLDDIR)ffmpeg/lib/libavcodec$(ARCH) : ext/ffmpeg/configure
 	@mkdir -p $(abspath $(dir $@)..)
-	cd $(abspath $(dir $@)..) && $(abspath $^) --enable-static --disable-shared --disable-programs --disable-doc --disable-swresample --disable-postproc --disable-iconv --disable-jack --disable-alsa --disable-appkit --disable-coreimage --disable-sndio --disable-schannel --disable-securetransport --disable-avfoundation --prefix="$(abspath $(dir $@)..)" && $(MAKE) install
+	cd $(abspath $(dir $@)..) && $(abspath $^) --enable-static --disable-shared --disable-programs --disable-doc --disable-avdevice --disable-swresample --disable-postproc --disable-avfilter --disable-iconv --disable-jack --disable-alsa --disable-appkit --disable-coreimage --disable-sndio --disable-schannel --disable-securetransport --disable-avfoundation --prefix="$(abspath $(dir $@)..)" && $(MAKE) install
 
 $(BLDDIR)progressbar-cpp/libprogressbar-cpp$(ARCH) : ext/progressbar-cpp/Makefile
 	@mkdir -p $(abspath $(dir $@)..)
