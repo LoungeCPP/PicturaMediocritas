@@ -29,7 +29,7 @@ else
 	EXE :=
 	PIC := -fPIC
 	ECHO := echo
-	OS_LD_LIBS := ncurses
+	OS_LD_LIBS := ncurses dl pthread
 endif
 
 ifneq "$(ADDITIONAL_INCLUDE_DIR)" ""

@@ -35,8 +35,6 @@ constexpr const std::size_t pictura_mediocritas::average_frame<AccT, Channels>::
 template <class AccT, std::size_t Channels>
 pictura_mediocritas::average_frame<AccT, Channels>::average_frame(std::size_t w, std::size_t h)
       : width(w), height(h), frames(0), pixels(width * height * Channels) {
-	std::cerr << "average_frame<Channels=" << Channels << ">(width=" << width << ", height=" << height << ") => " << (width * height * Channels) << " = "
-	          << pixels.size() << '\n';
 }
 
 template <class AccT, std::size_t Channels>

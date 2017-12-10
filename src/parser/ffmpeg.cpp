@@ -22,7 +22,6 @@
 
 
 #include "ffmpeg.hpp"
-#include <iostream>
 
 
 void pictura_mediocritas::av_format_context_deleter::operator()(AVFormatContext * ctx) const noexcept {
@@ -97,7 +96,7 @@ bool pictura_mediocritas::ffmpeg_parser::receive_frame(const std::function<bool(
 			for(auto x = 0; x < out_frame->width; ++x)
 				for(auto c = 0u; c < channels; ++c)
 					std::swap(out_frame->data[0][(y * out_frame->width + x) * channels + c],
-					          out_frame->data[0][((out_frame->height - y) * out_frame->width + x) * channels + c]);
+					          out_frame->data[0][((out_frame->height - 1 - y) * out_frame->width + x) * channels + c]);
 
 		if(!callback())
 			return true;
@@ -131,10 +130,10 @@ pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::si
 	if(!packet)
 		return;
 
-	if((error_value = av_seek_frame(container.get(), best_stream, 0, 0)) < 0) {
-		error_class = error_class_t::seek;
-		return;
-	}
+	// if((error_value = av_seek_frame(container.get(), best_stream, 0, 0)) < 0) {
+	// 	error_class = error_class_t::seek;
+	// 	return;
+	// }
 
 	orig_frame.reset(av_frame_alloc());
 	if(!orig_frame)

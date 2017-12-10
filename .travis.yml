@@ -3,7 +3,7 @@ sudo: false
 cache:
   apt: true
   directories:
-    - /tmp/tools
+    - /tmp/ffmpeg
 git:
   submodules: false
 
@@ -109,7 +109,16 @@ install:
   - if [ "$LANGUAGE" == "Ruby" ]; then gem install ronn; fi
 
 script:
+  - if [ "$LANGUAGE" == "C++" ] && [ -f "/tmp/ffmpeg/lib/libavcodec.a" ]; then
+      mkdir -p "out/build";
+      ln -s "/tmp/ffmpeg" "out/build/ffmpeg";
+    fi
   - if [ "$LANGUAGE" == "C++" ]; then make ADDITIONAL_INCLUDE_DIR="$LIB_INSTALLDIR/include" ADDITIONAL_LINK_DIR="$LIB_INSTALLDIR/lib"; fi
+  - if [ "$LANGUAGE" == "C++" ]; then
+      mkdir -p "/tmp/ffmpeg";
+      cp -r "out/build/ffmpeg/lib" "/tmp/ffmpeg/";
+      cp -r "out/build/ffmpeg/include" "/tmp/ffmpeg/";
+    fi
   -
   - if [ "$LANGUAGE" == "Ruby" ]; then
       mkdir man; pushd man;

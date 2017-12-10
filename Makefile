@@ -23,6 +23,7 @@
 include configMakefile
 
 
+# If ffmpeg autodetects something for your system, you can put it here to link to
 FFMPEG_PREREQUESITE_LD_LIBS := bz2 lzma z
 LDAR := $(PIC) $(LNCXXAR) $(foreach l,ffmpeg/lib progressbar-cpp,-L$(BLDDIR)$(l)) $(foreach l,progressbar-cpp swscale avformat avcodec avutil freeimage $(FFMPEG_PREREQUESITE_LD_LIBS) $(OS_LD_LIBS),-l$(l))
 VERAR := $(foreach l,PICTURA_MEDIOCRITAS CATCH2 PROGRESSBAR_CPP TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
@@ -56,7 +57,7 @@ $(OUTDIR)pictura-mediocritas-tests$(EXE) : $(subst tests/,$(BLDDIR)test_obj/,$(s
 
 $(BLDDIR)ffmpeg/lib/libavcodec$(ARCH) : ext/ffmpeg/configure
 	@mkdir -p $(abspath $(dir $@)..)
-	cd $(abspath $(dir $@)..) && $(abspath $^) --enable-static --disable-shared --disable-programs --disable-doc --disable-avdevice --disable-swresample --disable-postproc --disable-avfilter --disable-iconv --disable-jack --disable-alsa --disable-appkit --disable-coreimage --disable-sndio --disable-schannel --disable-securetransport --disable-avfoundation --prefix="$(abspath $(dir $@)..)" && $(MAKE) install
+	cd $(abspath $(dir $@)..) && $(abspath $^) --enable-static $(foreach l,shared programs doc avdevice swresample postproc avfilter iconv jack alsa appkit coreimage sndio schannel securetransport avfoundation encoders filters muxers libxcb libxcb-shm libxcb-xfixes libxcb-shape audiotoolbox encoders filters muxers,--disable-$(l)) --prefix="$(abspath $(dir $@)..)" && $(MAKE) install
 
 $(BLDDIR)progressbar-cpp/libprogressbar-cpp$(ARCH) : ext/progressbar-cpp/Makefile
 	@mkdir -p $(abspath $(dir $@)..)

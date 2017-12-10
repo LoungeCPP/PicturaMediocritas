@@ -89,11 +89,10 @@ int main(int argc, const char ** argv) {
 				// return 1;
 			}
 		} else if(parser.error() == std::string("")) {
-			std::cerr << "Couldn't open " << opts.in_video << ": " << parser.error() << '\n';
+			std::cerr << "Couldn't open " << opts.in_video << ".\n";
 			return 1;
 		} else {
-			std::cerr << "Could not find codec for " << opts.in_video << ".\n";
-			std::cerr << parser.error() << '\n';
+			std::cerr << "Could not find codec for " << opts.in_video << ": " << parser.error() << '\n';
 			return 1;
 		}
 	}
