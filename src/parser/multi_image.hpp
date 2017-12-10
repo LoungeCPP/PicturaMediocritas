@@ -31,14 +31,14 @@
 
 namespace pictura_mediocritas {
 	struct freeimage_multi_bitmap_deleter {
-		void operator()(FIMULTIBITMAP * multi_bitmap) const;
+		void operator()(FIMULTIBITMAP * multi_bitmap) const noexcept;
 	};
 
 	struct freeimage_page_unlocker {
 		FIMULTIBITMAP * owner;
 		bool changed;
 
-		void operator()(FIBITMAP * page) const;
+		void operator()(FIBITMAP * page) const noexcept;
 	};
 
 	class multi_image_parser {

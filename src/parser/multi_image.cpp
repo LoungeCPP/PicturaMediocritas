@@ -25,11 +25,11 @@
 #include <iostream>
 
 
-void pictura_mediocritas::freeimage_multi_bitmap_deleter::operator()(FIMULTIBITMAP * multi_bitmap) const {
+void pictura_mediocritas::freeimage_multi_bitmap_deleter::operator()(FIMULTIBITMAP * multi_bitmap) const noexcept {
 	FreeImage_CloseMultiBitmap(multi_bitmap);
 }
 
-void pictura_mediocritas::freeimage_page_unlocker::operator()(FIBITMAP * page) const {
+void pictura_mediocritas::freeimage_page_unlocker::operator()(FIBITMAP * page) const noexcept {
 	FreeImage_UnlockPage(owner, page, changed);
 }
 
