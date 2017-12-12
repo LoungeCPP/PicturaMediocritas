@@ -18,8 +18,8 @@ build: off
 build_script:
   - git submodule update --init --recursive
   - make
-  - cp out\pictura-mediocritas.exe pictura-mediocritas-0.1.0.exe
-  - strip --strip-all --remove-section=.comment --remove-section=.note pictura-mediocritas-0.1.0.exe
+  - cp out\pictura-mediocritas.exe pictura-mediocritas-v0.1.0.exe
+  - strip --strip-all --remove-section=.comment --remove-section=.note pictura-mediocritas-v0.1.0.exe
 
 test: off
 
