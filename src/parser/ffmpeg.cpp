@@ -44,7 +44,6 @@ void pictura_mediocritas::sws_context_deleter::operator()(SwsContext * ctx) cons
 	sws_freeContext(ctx);
 }
 
-
 bool pictura_mediocritas::ffmpeg_parser::send_packet(AVPacket * pkt) noexcept {
 	const auto err = avcodec_send_packet(best_codec_ctx.get(), pkt);
 	switch(err) {
@@ -52,6 +51,7 @@ bool pictura_mediocritas::ffmpeg_parser::send_packet(AVPacket * pkt) noexcept {
 		case AVERROR(EAGAIN):
 		case AVERROR_EOF:
 			return false;
+
 		default:
 			error_value = err;
 			error_class = error_class_t::send_packet;
@@ -106,6 +106,7 @@ bool pictura_mediocritas::ffmpeg_parser::receive_frame(const std::function<bool(
 		case AVERROR(EAGAIN):
 		case AVERROR_EOF:
 			return false;
+
 		default:
 			error_class = error_class_t::receive_frame;
 			return true;
@@ -130,10 +131,10 @@ pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::si
 	if(!packet)
 		return;
 
-	// if((error_value = av_seek_frame(container.get(), best_stream, 0, 0)) < 0) {
-	// 	error_class = error_class_t::seek;
-	// 	return;
-	// }
+	if((error_value = avformat_find_stream_info(container.get(), nullptr)) < 0) {
+		error_class = error_class_t::find_stream_info;
+		return;
+	}
 
 	orig_frame.reset(av_frame_alloc());
 	if(!orig_frame)
@@ -161,12 +162,15 @@ pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::si
 		case 1:
 			out_frame->format = AV_PIX_FMT_GRAY8;
 			break;
+
 		case 3:
 			out_frame->format = AV_PIX_FMT_RGB24;
 			break;
+
 		case 4:
 			out_frame->format = AV_PIX_FMT_RGBA;
 			break;
+
 		default:
 			error_value = -static_cast<int>(channels) - 1;
 			error_class = error_class_t::set_codec_parameters;
@@ -199,8 +203,8 @@ const char * pictura_mediocritas::ffmpeg_parser::error() const noexcept {
 					break;
 			}
 
-		case error_class_t::seek:
-			return "Couldn't seek to zeroth frame.";
+		case error_class_t::find_stream_info:
+			return "Couldn't find best stream info.";
 
 		case error_class_t::set_codec_parameters:
 			return "Couldn't set codec context parameters.";
@@ -215,6 +219,9 @@ const char * pictura_mediocritas::ffmpeg_parser::error() const noexcept {
 
 				case AVERROR(ENOMEM):
 					return "Couldn't send packet – out of memory.";
+
+				case AVERROR_INVALIDDATA:
+					return "Couldn't send packet – invalid data.";
 
 				default:
 					return "Couldn't send packet.";
@@ -282,6 +289,8 @@ bool pictura_mediocritas::ffmpeg_parser::process(const std::function<bool()> & c
 		return false;
 
 	do {
+		av_packet_unref(packet.get());
+
 		if((error_value = av_read_frame(container.get(), packet.get())) < 0)
 			return false;
 

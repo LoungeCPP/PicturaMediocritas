@@ -63,7 +63,7 @@ namespace pictura_mediocritas {
 			none,
 			open_input,
 			find_best_stream,
-			seek,
+			find_stream_info,
 			set_codec_parameters,
 			open_codec,
 			send_packet,

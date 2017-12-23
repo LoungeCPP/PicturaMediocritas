@@ -86,7 +86,7 @@ int main(int argc, const char ** argv) {
 				   return true;
 			   })) {
 				std::cerr << "Parsing " << opts.in_video << " failed: " << parser.error() << '\n';
-				// return 1;
+				return 1;
 			}
 		} else if(parser.error() == std::string("")) {
 			std::cerr << "Couldn't open " << opts.in_video << ".\n";

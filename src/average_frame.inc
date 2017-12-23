@@ -25,7 +25,6 @@
 
 #include "average_frame.hpp"
 #include <algorithm>
-#include <iostream>
 
 
 template <class AccT, std::size_t Channels>
@@ -34,8 +33,7 @@ constexpr const std::size_t pictura_mediocritas::average_frame<AccT, Channels>::
 
 template <class AccT, std::size_t Channels>
 pictura_mediocritas::average_frame<AccT, Channels>::average_frame(std::size_t w, std::size_t h)
-      : width(w), height(h), frames(0), pixels(width * height * Channels) {
-}
+      : width(w), height(h), frames(0), pixels(width * height * Channels) {}
 
 template <class AccT, std::size_t Channels>
 pictura_mediocritas::average_frame<AccT, Channels>::average_frame(std::pair<std::size_t, std::size_t> s) : average_frame(s.first, s.second) {}
