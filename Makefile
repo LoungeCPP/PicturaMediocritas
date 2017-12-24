@@ -25,16 +25,16 @@ include configMakefile
 
 # If ffmpeg autodetects something for your system, you can put it here to link to
 FFMPEG_PREREQUESITE_LD_LIBS := bz2 lzma z
-LDAR := $(PIC) $(LNCXXAR) $(foreach l,ffmpeg/lib progressbar-cpp,-L$(BLDDIR)$(l)) $(foreach l,progressbar-cpp swscale avformat avcodec avutil freeimage $(FFMPEG_PREREQUESITE_LD_LIBS) $(OS_LD_LIBS),-l$(l))
-VERAR := $(foreach l,PICTURA_MEDIOCRITAS CATCH2 PROGRESSBAR_CPP TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
-INCAR := $(foreach l,$(foreach l,$(foreach l,progressbar-cpp progressbar-cpp/ext/progressbar optional TCLAP,$(l)/include) Catch2/single_include,ext/$(l)) $(foreach l,ffmpeg,$(BLDDIR)$(l)/include),-isystem$(l))
+LDAR := $(PIC) $(LNCXXAR) $(foreach l,ffmpeg/lib pb-cpp,-L$(BLDDIR)$(l)) $(foreach l,pb-cpp swscale avformat avcodec avutil freeimage $(FFMPEG_PREREQUESITE_LD_LIBS) $(OS_LD_LIBS),-l$(l))
+VERAR := $(foreach l,PICTURA_MEDIOCRITAS CATCH2 PB_CPP TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
+INCAR := $(foreach l,$(foreach l,$(foreach l,pb-cpp pb-cpp/ext/optional-lite TCLAP,$(l)/include) Catch2/single_include,ext/$(l)) $(foreach l,ffmpeg,$(BLDDIR)$(l)/include),-isystem$(l))
 TEST_SOURCES := $(sort $(wildcard tests/*.cpp tests/**/*.cpp tests/**/**/*.cpp tests/**/**/**/*.cpp))
 BUILD_TEST_SOURCES := $(sort $(wildcard build-tests/*.cpp build-tests/**/*.cpp build-tests/**/**/*.cpp build-tests/**/**/**/*.cpp))
 SOURCES := $(sort $(wildcard src/*.cpp src/**/*.cpp src/**/**/*.cpp src/**/**/**/*.cpp))
 
-.PHONY : all clean ffmpeg progressbar-cpp exe tests no-build-tests run-tests
+.PHONY : all clean ffmpeg pb-cpp exe tests no-build-tests run-tests
 
-all : ffmpeg progressbar-cpp exe tests no-build-tests run-tests
+all : ffmpeg pb-cpp exe tests no-build-tests run-tests
 
 clean :
 	rm -rf $(OUTDIR)
@@ -46,7 +46,7 @@ exe : $(OUTDIR)pictura-mediocritas$(EXE)
 tests : $(OUTDIR)pictura-mediocritas-tests$(EXE)
 no-build-tests : $(subst build-tests/,$(BLDDIR)build_test_obj/,$(subst .cpp,$(OBJ),$(BUILD_TEST_SOURCES)))
 ffmpeg : $(BLDDIR)ffmpeg/lib/libavcodec$(ARCH)
-progressbar-cpp : $(BLDDIR)progressbar-cpp/libprogressbar-cpp$(ARCH)
+pb-cpp : $(BLDDIR)pb-cpp/libpb-cpp$(ARCH)
 
 
 $(OUTDIR)pictura-mediocritas$(EXE) : $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,$(OBJ),$(SOURCES)))
@@ -59,10 +59,9 @@ $(BLDDIR)ffmpeg/lib/libavcodec$(ARCH) : ext/ffmpeg/configure
 	@mkdir -p $(abspath $(dir $@)..)
 	cd $(abspath $(dir $@)..) && $(abspath $^) --enable-static $(foreach l,shared programs doc avdevice swresample postproc avfilter iconv jack alsa appkit coreimage sndio schannel securetransport avfoundation encoders filters muxers libxcb libxcb-shm libxcb-xfixes libxcb-shape audiotoolbox encoders filters muxers,--disable-$(l)) --prefix="$(abspath $(dir $@)..)" && $(MAKE) install
 
-$(BLDDIR)progressbar-cpp/libprogressbar-cpp$(ARCH) : ext/progressbar-cpp/Makefile
+$(BLDDIR)pb-cpp/libpb-cpp$(ARCH) : ext/pb-cpp/Makefile
 	@mkdir -p $(abspath $(dir $@)..)
-	cd $(dir $^) && $(MAKE) static
-	mv $(dir $^)out $(dir $@)
+	cd $(dir $^) && $(MAKE) OUTDIR="$(abspath $(dir $@))/" static
 
 
 $(OBJDIR)%$(OBJ) : $(SRCDIR)%.cpp

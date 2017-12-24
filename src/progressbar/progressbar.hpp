@@ -24,7 +24,7 @@
 #pragma once
 
 
-#include <progressbar_cpp/progressbar.hpp>
+#include <pb-cpp/progressbar.hpp>
 #include "os_progressbar.hpp"
 #include <cstdint>
 
@@ -33,8 +33,10 @@ namespace pictura_mediocritas {
 	/// A colluded text and taskbar (on Windows) progress bar.
 	class progressbar {
 	private:
-		progressbar_cpp::progressbar text_bar;
+		pb::progressbar text_bar;
 		os_progressbar os_bar;
+
+		void set_defaults(std::size_t max);
 
 	public:
 		/// Create a new progressbar with the specified label and number of steps.
@@ -43,12 +45,15 @@ namespace pictura_mediocritas {
 		/// @param max The number of times the progressbar must be incremented before it is considered complete,
 		///            or, in other words, the number of tasks that this progressbar is tracking.
 		progressbar(const char * label, std::size_t max);
-		progressbar(std::string label, std::size_t max);
+		progressbar(const std::string & label, std::size_t max);
 
 		/// Increment progressbar. Don't increment past the initialized # of steps, though.
 		void inc();
 
 		/// Set the current status on the progressbar.
 		void update(std::size_t value);
+
+		/// Mark the status bar as "finished".
+		void finish();
 	};
 }

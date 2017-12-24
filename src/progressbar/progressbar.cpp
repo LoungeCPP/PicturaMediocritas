@@ -24,15 +24,37 @@
 #include "progressbar.hpp"
 
 
-pictura_mediocritas::progressbar::progressbar(const char * label, std::size_t max) : text_bar(label, max), os_bar(max) {}
-pictura_mediocritas::progressbar::progressbar(std::string label, std::size_t max) : text_bar(label, max), os_bar(max) {}
+using namespace std::literals;
+
+
+void pictura_mediocritas::progressbar::set_defaults(std::size_t max) {
+	text_bar.max_refresh_rate(100ms);
+	if(!max) {
+		text_bar.show_tick = true;
+		text_bar.show_bar  = false;
+	}
+}
+
+pictura_mediocritas::progressbar::progressbar(const char * label, std::size_t max) : text_bar(max), os_bar(max) {
+	text_bar.message(label);
+	set_defaults(max);
+}
+
+pictura_mediocritas::progressbar::progressbar(const std::string & label, std::size_t max) : text_bar(max), os_bar(max) {
+	text_bar.message(label);
+	set_defaults(max);
+}
 
 void pictura_mediocritas::progressbar::inc() {
-	text_bar.inc();
+	++text_bar;
 	os_bar.inc();
 }
 
 void pictura_mediocritas::progressbar::update(std::size_t value) {
-	text_bar.update(value);
+	text_bar = value;
 	os_bar.update(value);
+}
+
+void pictura_mediocritas::progressbar::finish() {
+	text_bar.finish();
 }
