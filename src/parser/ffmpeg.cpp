@@ -22,6 +22,7 @@
 
 
 #include "ffmpeg.hpp"
+#include <cctype>
 
 
 void pictura_mediocritas::av_format_context_deleter::operator()(AVFormatContext * ctx) const noexcept {
@@ -113,6 +114,13 @@ bool pictura_mediocritas::ffmpeg_parser::receive_frame(const std::function<bool(
 	}
 }
 
+std::string pictura_mediocritas::ffmpeg_parser::error_str() const {
+	char buf[AV_ERROR_MAX_STRING_SIZE]{};
+	av_strerror(error_value, buf, sizeof buf);
+	buf[0] = std::tolower(buf[0]);
+	return buf;
+}
+
 pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::size_t c)
       : best_stream(-69), best_codec(nullptr), channels(c), error_class(error_class_t::none), error_value(0) {
 	AVFormatContext * container_in = nullptr;
@@ -182,21 +190,21 @@ pictura_mediocritas::ffmpeg_parser::operator bool() const noexcept {
 	return packet && orig_frame && best_codec_ctx && out_frame && (error_class == error_class_t::none && error_value >= 0);
 }
 
-const char * pictura_mediocritas::ffmpeg_parser::error() const noexcept {
+nonstd::optional<std::string> pictura_mediocritas::ffmpeg_parser::error() const {
 	switch(error_class) {
 		case error_class_t::none:
 			break;
 
 		case error_class_t::open_input:
-			return "";
+			return {""};
 
 		case error_class_t::find_best_stream:
 			switch(error_value) {
 				case AVERROR_STREAM_NOT_FOUND:
-					return "No video stream in input.";
+					return {"No video stream in input."};
 
 				case AVERROR_DECODER_NOT_FOUND:
-					return "No available decoder for input stream.";
+					return {"No available decoder for input stream."};
 
 				default:
 					// Unreachable
@@ -204,70 +212,70 @@ const char * pictura_mediocritas::ffmpeg_parser::error() const noexcept {
 			}
 
 		case error_class_t::find_stream_info:
-			return "Couldn't find best stream info.";
+			return {"Couldn't find best stream info: " + error_str() + '.'};
 
 		case error_class_t::set_codec_parameters:
-			return "Couldn't set codec context parameters.";
+			return {"Couldn't set codec context parameters: " + error_str() + '.'};
 
 		case error_class_t::open_codec:
-			return "Couldn't open codec.";
+			return {"Couldn't open codec: " + error_str() + '.'};
 
 		case error_class_t::send_packet:
 			switch(error_value) {
 				case AVERROR(EINVAL):
-					return "Couldn't send packet – invalid video.";
+					return {"Couldn't send packet – invalid video."};
 
 				case AVERROR(ENOMEM):
-					return "Couldn't send packet – out of memory.";
+					return {"Couldn't send packet – out of memory."};
 
 				case AVERROR_INVALIDDATA:
-					return "Couldn't send packet – invalid data.";
+					return {"Couldn't send packet – invalid data."};
 
 				default:
-					return "Couldn't send packet.";
+					return {"Couldn't send packet: " + error_str() + '.'};
 			}
 
 		case error_class_t::receive_frame:
 			switch(error_value) {
 				case AVERROR(EINVAL):
-					return "Couldn't receive frame – invalid video.";
+					return {"Couldn't receive frame – invalid video."};
 
 				default:
-					return "Couldn't receive frame.";
+					return {"Couldn't receive frame: " + error_str() + '.'};
 			}
 
 		case error_class_t::channel_count:
 			switch(channels) {
 				case 0:
-					return "Zero-channel video makes no sense.";
+					return {"Zero-channel video makes no sense."};
 
 				default:
-					return "Invalid channel count.";
+					return {"Invalid channel count: " + error_str() + '.'};
 			}
 
 		case error_class_t::read_frame:
-			return "Couldn't read frame.";
+			return {"Couldn't read frame: " + error_str() + '.'};
 
 		case error_class_t::get_frame_buffer:
-			return "Couldn't get output frame buffer.";
+			return {"Couldn't get output frame buffer: " + error_str() + '.'};
 
 		case error_class_t::scale:
-			return "Couldn't scale image.";
+			return {"Couldn't scale image: " + error_str() + '.'};
 	}
 
 	if(!packet)
-		return "Couldn't allocate packet.";
+		return {"Couldn't allocate packet."};
 
 	if(!orig_frame)
-		return "Couldn't allocate frame.";
+		return {"Couldn't allocate frame."};
 
 	if(!best_codec_ctx)
-		return "Couldn't allocate codec context.";
+		return {"Couldn't allocate codec context."};
 
 	if(!out_frame)
-		return "Couldn't allocate output frame.";
+		return {"Couldn't allocate output frame."};
 
-	return nullptr;
+	return nonstd::nullopt;
 }
 
 std::pair<std::size_t, std::size_t> pictura_mediocritas::ffmpeg_parser::size() const noexcept {
@@ -291,8 +299,14 @@ bool pictura_mediocritas::ffmpeg_parser::process(const std::function<bool()> & c
 	do {
 		av_packet_unref(packet.get());
 
-		if((error_value = av_read_frame(container.get(), packet.get())) < 0)
+		if((error_value = av_read_frame(container.get(), packet.get())) < 0) {
+			if(error_value == AVERROR_EOF) {
+				error_value = 0;
+				return true;
+			}
+			error_class = error_class_t::read_frame;
 			return false;
+		}
 
 		if(receive_frame(callback))
 			return false;

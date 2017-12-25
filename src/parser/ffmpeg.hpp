@@ -27,6 +27,8 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <nonstd/optional.hpp>
+#include <string>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -91,6 +93,7 @@ namespace pictura_mediocritas {
 
 		bool send_packet(AVPacket * pkt) noexcept;
 		bool receive_frame(const std::function<bool()> & callback) noexcept;
+		std::string error_str() const;
 
 
 	public:
@@ -100,8 +103,8 @@ namespace pictura_mediocritas {
 		/// Check if this parser is in a valid state.
 		explicit operator bool() const noexcept;
 
-		/// Get the error string, or `nullptr` if conversion to bool is `true`.
-		const char * error() const noexcept;
+		/// Get the error string, or `nullopt` if conversion to bool is `true`.
+		nonstd::optional<std::string> error() const;
 
 		/// Get current frame's size as `{width, height}`, or `{0, 0}` if noty yet ready.
 		std::pair<std::size_t, std::size_t> size() const noexcept;

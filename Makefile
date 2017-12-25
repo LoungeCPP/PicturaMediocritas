@@ -27,7 +27,7 @@ include configMakefile
 FFMPEG_PREREQUESITE_LD_LIBS := bz2 lzma z
 LDAR := $(PIC) $(LNCXXAR) $(foreach l,ffmpeg/lib progressbar-cpp,-L$(BLDDIR)$(l)) $(foreach l,progressbar-cpp swscale avformat avcodec avutil freeimage $(FFMPEG_PREREQUESITE_LD_LIBS) $(OS_LD_LIBS),-l$(l))
 VERAR := $(foreach l,PICTURA_MEDIOCRITAS CATCH2 PROGRESSBAR_CPP TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
-INCAR := $(foreach l,$(foreach l,$(foreach l,progressbar-cpp progressbar-cpp/ext/progressbar TCLAP,$(l)/include) Catch2/single_include,ext/$(l)) $(foreach l,ffmpeg,$(BLDDIR)$(l)/include),-isystem$(l))
+INCAR := $(foreach l,$(foreach l,$(foreach l,progressbar-cpp progressbar-cpp/ext/progressbar optional TCLAP,$(l)/include) Catch2/single_include,ext/$(l)) $(foreach l,ffmpeg,$(BLDDIR)$(l)/include),-isystem$(l))
 TEST_SOURCES := $(sort $(wildcard tests/*.cpp tests/**/*.cpp tests/**/**/*.cpp tests/**/**/**/*.cpp))
 BUILD_TEST_SOURCES := $(sort $(wildcard build-tests/*.cpp build-tests/**/*.cpp build-tests/**/**/*.cpp build-tests/**/**/**/*.cpp))
 SOURCES := $(sort $(wildcard src/*.cpp src/**/*.cpp src/**/**/*.cpp src/**/**/**/*.cpp))
