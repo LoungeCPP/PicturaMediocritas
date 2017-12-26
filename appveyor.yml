@@ -31,7 +31,7 @@ deploy:
   provider: GitHub
   artifact: pictura-mediocritas-v0.1.0.exe
   auth_token:
-    secure: /6TsIkMcI5dtUAvr8RJZxjUMR9uDgFLLZDyNbm5HqNCD0zbuj4TUY2JPIte4F+E7
+    secure: ulV16u9GQNsy21XpNcP46K2SSbTHTv68LK0UGobzLbTEswEPEg0hso5XTpmuwa7Y
   on:
     appveyor_repo_tag: true
 
