@@ -3,7 +3,7 @@ Like aurea mediocritas, but with frames in a video instead.
 
 Or, you know, get an average frame from a video.
 
-## [Manpage](https://cdn.rawgit.com/LoungeCPP/PicturaMediocritas/man/pictura-mediocritas.1.html)
+## [Manpage](https://rawcdn.githack.com/LoungeCPP/PicturaMediocritas/man/pictura-mediocritas.1.html)
 
 ## Examples
 
@@ -12,7 +12,7 @@ Or, you know, get an average frame from a video.
 $ pictura-mediocritas "video.mp4"
 ```
 
-For details, see the [manpage](https://cdn.rawgit.com/LoungeCPP/PicturaMediocritas/man/pictura-mediocritas.1.html).
+For details, see the [manpage](https://rawcdn.githack.com/LoungeCPP/PicturaMediocritas/man/pictura-mediocritas.1.html).
 
 ## Installation
 
