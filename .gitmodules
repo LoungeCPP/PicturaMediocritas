@@ -12,4 +12,4 @@
 [submodule "ext/ffmpeg"]
 	path = ext/ffmpeg
 	url = https://git.ffmpeg.org/ffmpeg.git
-	branch = n3.4
+	branch = n4.2.1

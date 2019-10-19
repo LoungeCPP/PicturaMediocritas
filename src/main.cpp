@@ -66,11 +66,9 @@ int main(int argc, const char ** argv) {
 			parser.next();
 			progress.inc();
 		}
+
+		progress.finish();
 	} else {
-		av_register_all();
-		avcodec_register_all();
-
-
 		pictura_mediocritas::ffmpeg_parser parser(opts.in_video.c_str(), decltype(avg_frame)::channels);
 		if(parser) {
 			std::unique_ptr<pictura_mediocritas::progressbar> progress;

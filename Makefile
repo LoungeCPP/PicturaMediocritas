@@ -24,7 +24,7 @@ include configMakefile
 
 
 # If ffmpeg autodetects something for your system, you can put it here to link to
-FFMPEG_PREREQUESITE_LD_LIBS := bz2 lzma z
+FFMPEG_PREREQUESITE_LD_LIBS := bcrypt bz2 lzma z
 LDAR := $(PIC) $(LNCXXAR) $(foreach l,ffmpeg/lib pb-cpp,-L$(BLDDIR)$(l)) $(foreach l,pb-cpp swscale avformat avcodec avutil freeimage $(FFMPEG_PREREQUESITE_LD_LIBS) $(OS_LD_LIBS),-l$(l))
 VERAR := $(foreach l,PICTURA_MEDIOCRITAS CATCH2 PB_CPP TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
 INCAR := $(foreach l,$(foreach l,$(foreach l,pb-cpp pb-cpp/ext/optional-lite TCLAP,$(l)/include) Catch2/single_include,ext/$(l)) $(foreach l,ffmpeg,$(BLDDIR)$(l)/include),-isystem$(l))
@@ -57,7 +57,7 @@ $(OUTDIR)pictura-mediocritas-tests$(EXE) : $(subst tests/,$(BLDDIR)test_obj/,$(s
 
 $(BLDDIR)ffmpeg/lib/libavcodec$(ARCH) : ext/ffmpeg/configure
 	@mkdir -p $(abspath $(dir $@)..)
-	cd $(abspath $(dir $@)..) && $(abspath $^) --enable-static $(foreach l,shared programs doc avdevice swresample postproc avfilter iconv jack alsa appkit coreimage sndio schannel securetransport avfoundation encoders filters muxers libxcb libxcb-shm libxcb-xfixes libxcb-shape audiotoolbox encoders filters muxers,--disable-$(l)) --prefix="$(abspath $(dir $@)..)" && $(MAKE) install
+	cd $(abspath $(dir $@)..) && $(abspath $^) --enable-static $(foreach l,shared programs doc avdevice swresample postproc avfilter iconv libjack alsa appkit coreimage sndio schannel securetransport avfoundation encoders filters muxers libxcb libxcb-shm libxcb-xfixes libxcb-shape audiotoolbox encoders filters muxers,--disable-$(l)) --prefix="$(abspath $(dir $@)..)" && $(MAKE) install
 
 $(BLDDIR)pb-cpp/libpb-cpp$(ARCH) : ext/pb-cpp/Makefile
 	@mkdir -p $(abspath $(dir $@)..)

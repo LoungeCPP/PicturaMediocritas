@@ -31,7 +31,7 @@
 using namespace std::literals;
 
 
-namespace Catch {
+/*namespace Catch {
 	template <>
 	template <class AccT>
 	struct StringMaker<pictura_mediocritas::average_frame<AccT>> {
@@ -58,7 +58,7 @@ namespace Catch {
 			return oss.str();
 		}
 	};
-}
+}*/
 
 
 TEST_CASE("pictura_mediocritas::channels", "[average_frame]") {
@@ -85,7 +85,7 @@ TEST_CASE("pictura_mediocritas::channels", "[average_frame]") {
 }
 
 TEST_CASE("pictura_mediocritas::value_type", "[average_frame]") {
-#define TYPES(t)                                                                 \
+#define TYPES(t)                                                                        \
 	REQUIRE((std::is_same<pictura_mediocritas::average_frame<t>::value_type, t>::value)); \
 	REQUIRE((std::is_same<pictura_mediocritas::average_frame<t>::value_type, t>::value)); \
 	REQUIRE((std::is_same<pictura_mediocritas::average_frame<t>::value_type, t>::value)); \
