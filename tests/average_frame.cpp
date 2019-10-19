@@ -31,8 +31,7 @@
 using namespace std::literals;
 
 
-/*namespace Catch {
-	template <>
+namespace Catch {
 	template <class AccT>
 	struct StringMaker<pictura_mediocritas::average_frame<AccT>> {
 		static std::string convert(const pictura_mediocritas::average_frame<AccT> & value) {
@@ -40,25 +39,7 @@ using namespace std::literals;
 			       ", frames=" + StringMaker<decltype(value.processed_frames())>::convert(value.processed_frames()) + "}";
 		}
 	};
-
-	template <>
-	template <class T, std::size_t N>
-	struct StringMaker<std::array<T, N>> {
-		static std::string convert(const std::array<T, N> & value) {
-			std::stringstream oss;
-			oss << "[";
-			bool first = true;
-			for(auto && v : value) {
-				if(!first)
-					oss << ", ";
-				first = false;
-				oss << v;
-			}
-			oss << "]";
-			return oss.str();
-		}
-	};
-}*/
+}
 
 
 TEST_CASE("pictura_mediocritas::channels", "[average_frame]") {
