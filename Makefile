@@ -24,7 +24,7 @@ include configMakefile
 
 
 # If ffmpeg autodetects something for your system, you can put it here to link to
-FFMPEG_PREREQUESITE_LD_LIBS := bcrypt bz2 lzma z
+FFMPEG_PREREQUESITE_LD_LIBS := bz2 lzma z
 LDAR := $(PIC) $(LNCXXAR) $(foreach l,ffmpeg/lib pb-cpp,-L$(BLDDIR)$(l)) $(foreach l,pb-cpp swscale avformat avcodec avutil freeimage $(FFMPEG_PREREQUESITE_LD_LIBS) $(OS_LD_LIBS),-l$(l))
 VERAR := $(foreach l,PICTURA_MEDIOCRITAS CATCH2 PB_CPP TCLAP,-D$(l)_VERSION='$($(l)_VERSION)')
 INCAR := $(foreach l,$(foreach l,$(foreach l,pb-cpp pb-cpp/ext/optional-lite TCLAP,$(l)/include) Catch2/single_include/catch2,ext/$(l)) $(foreach l,ffmpeg,$(BLDDIR)$(l)/include),-isystem$(l))

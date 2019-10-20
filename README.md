@@ -8,8 +8,10 @@ Or, you know, get an average frame from a video.
 ## Examples
 
 ```sh
-# TODO: concretify
 $ pictura-mediocritas "video.mp4"
+# Averaged frame in   "video.png"
+
+$ pictura-mediocritas "video.mp4" "video-average.jpg"
 ```
 
 For details, see the [manpage](https://rawcdn.githack.com/LoungeCPP/PicturaMediocritas/man/pictura-mediocritas.1.html).

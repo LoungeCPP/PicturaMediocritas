@@ -13,6 +13,8 @@ install:
   - bash -lc "pacman --needed --noconfirm -Sy pacman-mirrors"
   - bash -lc "pacman --noconfirm -Syyu"
   - bash -lc "pacman --noconfirm -Su mingw-w64-x86_64-freeimage mingw-w64-x86_64-nasm"
+  -
+  - sed -i "s/FFMPEG_PREREQUESITE_LD_LIBS :=/\0 bcrypt/" Makefile
 
 build: off
 build_script:
