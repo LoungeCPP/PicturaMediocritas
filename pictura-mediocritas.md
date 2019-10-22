@@ -17,6 +17,8 @@ Or, you know, get an average frame from a video.
 
     Video to average, must exist.
 
+    Can be in any format supported by ffmpeg and gif.
+
   [OUT_IMAGE]
 
     Image to write the averaged frame to.
