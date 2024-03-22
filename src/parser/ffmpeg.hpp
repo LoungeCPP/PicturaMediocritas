@@ -27,7 +27,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <nonstd/optional.hpp>
+#include <optional>
 #include <string>
 
 extern "C" {
@@ -104,7 +104,7 @@ namespace pictura_mediocritas {
 		explicit operator bool() const noexcept;
 
 		/// Get the error string, or `nullopt` if conversion to bool is `true`.
-		nonstd::optional<std::string> error() const;
+		std::optional<std::string> error() const;
 
 		/// Get current frame's size as `{width, height}`, or `{0, 0}` if noty yet ready.
 		std::pair<std::size_t, std::size_t> size() const noexcept;

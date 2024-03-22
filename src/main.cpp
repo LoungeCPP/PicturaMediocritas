@@ -21,14 +21,14 @@
 
 
 #include "average_frame.hpp"
-#include "options/options.hpp"
+#include "options.hpp"
 #include "output_image.hpp"
 #include "parser/ffmpeg.hpp"
-#include "parser/multi_image.hpp"
 #include "util.hpp"
 #include <FreeImage.h>
 #include <cassert>
 #include <iostream>
+#include <unistd.h>
 
 extern "C" {
 #include <libavcodec/avcodec.h>

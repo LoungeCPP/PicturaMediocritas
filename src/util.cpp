@@ -65,12 +65,9 @@ bool pictura_mediocritas::has_extension(const char * path, const char * ext) {
 		return false;
 }
 
-std::string pictura_mediocritas::switch_extenstion(const std::string & path, const char * new_ext) {
+std::string pictura_mediocritas::switch_extenstion(const std::string_view & path, const char * new_ext) {
 	const auto dot = path.find_last_of('.');
-	if(dot == std::string::npos)
-		return path + '.' + new_ext;
-	else
-		return path.substr(0, dot) + '.' + new_ext;
+	return (std::string{(dot == std::string::npos) ? path : path.substr(0, dot)} += '.') += new_ext;
 }
 
 FREE_IMAGE_FORMAT pictura_mediocritas::deduce_image_format(const char * path) {
