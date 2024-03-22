@@ -38,6 +38,8 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
+using namespace std::chrono_literals;
+
 
 int main(int argc, const char ** argv) {
 	const auto opts_r = pictura_mediocritas::options::parse(argc, argv);
@@ -64,7 +66,29 @@ int main(int argc, const char ** argv) {
 			std::atomic<std::size_t> cur_frame_num;
 			std::atomic_flag done;
 		};
-		thread threads[MAXTHREADS] = {{{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}},{{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}};
+		thread threads[MAXTHREADS] = {{{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}};
+		const auto start           = std::chrono::high_resolution_clock::now();
+		std::jthread statussy{[&] {
+			auto write = [&](std::size_t done) {
+				const auto now = std::chrono::high_resolution_clock::now();
+				const auto len = parser.length();
+				std::fprintf(stderr, "\r%*zu/%zu\t%.4f/s", (int)std::log10(len | 1) + 1, done, parser.length(),
+				             (done / static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count()) * 1000));
+			};
+
+			for(;;) {
+				for(int i = 0; i < 10; ++i) {
+					std::this_thread::sleep_for(100ms);
+					if(threads[0].done.test())
+						goto done;
+				}
+				if(isatty(2))
+					write(threads[0].cur_frame_num.load(std::memory_order_relaxed));
+			}
+		done:
+			write(parser.length() ? parser.length() : threads[0].cur_frame_num.load(std::memory_order_relaxed));
+			std::fputc('\n', stderr);
+		}};
 		if(!parser.process([&]() {
 			   if(avg_frame.size().first == 0) {
 				   avg_frame = decltype(avg_frame)(parser.size());
@@ -74,7 +98,6 @@ int main(int argc, const char ** argv) {
 					   while(pthread_barrier_init(&threads[i].barrier, nullptr, 2))
 						   ;
 					   threads[i].thread = std::thread{[&, i = i] {
-						   char id     = '0' + i;
 						   auto & self = threads[i];
 
 						   pthread_barrier_wait(&self.barrier);
@@ -84,7 +107,6 @@ int main(int argc, const char ** argv) {
 								   break;
 							   auto frame = self.cur_frame_num.load(std::memory_order_relaxed);
 							   self.avg_frame.process_frame(parser, frame);
-							   write(2, &id, 1);
 							   pthread_barrier_wait(&self.barrier);
 						   }
 					   }};
@@ -98,11 +120,9 @@ int main(int argc, const char ** argv) {
 
 			   return true;
 		   })) {
-			std::cerr << "\nParsing " << opts.in_video << " failed: " << *parser.error() << '\n';
-			return 1;
+			std::cerr << "Parsing " << opts.in_video << " failed: " << *parser.error() << '\n';
+			std::exit(1);
 		} else {
-			write(2, "\n", 1);
-
 			for(auto i = 0u; i < thread_cnt; ++i) {
 				threads[i].done.test_and_set();
 				pthread_barrier_wait(&threads[i].barrier);
