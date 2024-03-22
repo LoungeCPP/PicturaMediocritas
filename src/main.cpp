@@ -55,45 +55,30 @@ int main(int argc, const char ** argv) {
 
 	pictura_mediocritas::average_frame_u64 avg_frame(0, 0);
 
-	if(pictura_mediocritas::has_extension(opts.in_video.c_str(), "gif")) {
-		pictura_mediocritas::multi_image_parser parser(FreeImage_OpenMultiBitmap(FIF_GIF, opts.in_video.c_str(), false, true, true, GIF_LOAD256 | GIF_PLAYBACK),
-		                                               decltype(avg_frame)::channels);
-		pictura_mediocritas::progressbar progress("Processing " + opts.in_video + ' ', parser.length());
-		avg_frame = decltype(avg_frame)(parser.size());
+	pictura_mediocritas::ffmpeg_parser parser(opts.in_video.c_str(), decltype(avg_frame)::channels);
+	if(parser) {
+		std::unique_ptr<pictura_mediocritas::progressbar> progress;
+		if(!parser.process([&]() {
+			   if(!progress)
+				   progress = std::make_unique<pictura_mediocritas::progressbar>("Processing " + opts.in_video + ' ', parser.length());
+			   if(avg_frame.size().first == 0)
+				   avg_frame = decltype(avg_frame)(parser.size());
 
-		for(auto i = 0u; i < parser.length(); ++i) {
-			avg_frame.process_frame(parser);
-			parser.next();
-			progress.inc();
-		}
+			   avg_frame.process_frame(parser);
+			   progress->inc();
 
-		progress.finish();
+			   return true;
+		   })) {
+			std::cerr << "\nParsing " << opts.in_video << " failed: " << *parser.error() << '\n';
+			return 1;
+		} else
+			progress->finish();
+	} else if(parser.error() == "") {
+		std::cerr << "Couldn't open " << opts.in_video << ".\n";
+		return 1;
 	} else {
-		pictura_mediocritas::ffmpeg_parser parser(opts.in_video.c_str(), decltype(avg_frame)::channels);
-		if(parser) {
-			std::unique_ptr<pictura_mediocritas::progressbar> progress;
-			if(!parser.process([&]() {
-				   if(!progress)
-					   progress = std::make_unique<pictura_mediocritas::progressbar>("Processing " + opts.in_video + ' ', parser.length());
-				   if(avg_frame.size().first == 0)
-					   avg_frame = decltype(avg_frame)(parser.size());
-
-				   avg_frame.process_frame(parser);
-				   progress->inc();
-
-				   return true;
-			   })) {
-				std::cerr << "\nParsing " << opts.in_video << " failed: " << *parser.error() << '\n';
-				return 1;
-			} else
-				progress->finish();
-		} else if(parser.error() == "") {
-			std::cerr << "Couldn't open " << opts.in_video << ".\n";
-			return 1;
-		} else {
-			std::cerr << "Could not find codec for " << opts.in_video << ": " << *parser.error() << '\n';
-			return 1;
-		}
+		std::cerr << "Could not find codec for " << opts.in_video << ": " << *parser.error() << '\n';
+		return 1;
 	}
 
 
