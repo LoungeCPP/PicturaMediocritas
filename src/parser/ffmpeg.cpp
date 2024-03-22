@@ -334,11 +334,3 @@ bool pictura_mediocritas::ffmpeg_parser::process(const std::function<bool()> & c
 
 	return true;
 }
-
-std::uint8_t pictura_mediocritas::ffmpeg_parser::operator[](const deref & idx) const noexcept {
-	auto & out_frame = out_frames[idx.frame_num % out_frames.size()];
-	if(out_frame && out_frame->data[0])
-		return out_frame->data[0][idx.idx];
-	else
-		return -1;
-}

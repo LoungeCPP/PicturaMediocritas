@@ -108,7 +108,7 @@ namespace pictura_mediocritas {
 		/// Get the error string, or `nullopt` if conversion to bool is `true`.
 		std::optional<std::string> error() const;
 
-		/// Get current frame's size as `{width, height}`, or `{0, 0}` if noty yet ready.
+		/// Get current frame's size as `{width, height}`, or `{0, 0}` if not yet ready.
 		std::pair<std::size_t, std::size_t> size() const noexcept;
 
 		/// Get frame count, or `0` if not yet ready.
@@ -127,6 +127,14 @@ namespace pictura_mediocritas {
 			std::size_t idx;
 			std::size_t frame_num;
 		};
+		template<class = void>
 		std::uint8_t operator[](const deref & idx) const noexcept;
 	};
+
+
+	template<class>
+	std::uint8_t pictura_mediocritas::ffmpeg_parser::operator[](const deref & idx) const noexcept {
+		auto & out_frame = out_frames[idx.frame_num % out_frames.size()];
+		return out_frame->data[0][idx.idx];
+	}
 }
