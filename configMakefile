@@ -51,8 +51,7 @@ PICTURA_MEDIOCRITAS_VERSION := "0.1.0"
 OBJ := .o
 ARCH := .a
 AR := ar
-CXXAR := -O3 -fomit-frame-pointer -std=c++17 -pedantic -Wall -Wextra -pipe $(INCCXXAR) $(PIC)
-CCAR := -O3 -fomit-frame-pointer -std=c11 -pipe $(PIC)
+CXXAR := -MD -O3 -fomit-frame-pointer -march=native -std=c++20 -pedantic -Wall -Wextra -Wno-missing-field-initializers -pipe $(INCCXXAR) $(PIC)
 
 OUTDIR := out/
 BLDDIR := out/build/

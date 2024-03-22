@@ -55,14 +55,17 @@ $(OUTDIR)pictura-mediocritas-tests$(EXE) : $(subst tests/,$(BLDDIR)test_obj/,$(s
 
 $(OBJDIR)%$(OBJ) : $(SRCDIR)%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXAR) $(VERAR) -c -o$@ $^
+	$(CXX) $(CXXAR) $(VERAR) -c -o$@ $<
 
 $(BLDDIR)test_obj/%$(OBJ) : tests/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXAR) -Isrc -c -o$@ $^
+	$(CXX) $(CXXAR) -Isrc -c -o$@ $<
 
 $(BLDDIR)build_test_obj/%$(OBJ) : build-tests/%.cpp
 	@mkdir -p $(dir $@)
-	! $(CXX) $(CXXAR) -Isrc -c -o$@ $^ 2>$(subst $(OBJ),.err_out,$@)
+	! $(CXX) $(CXXAR) -Isrc -c -o$@ $< 2>$(subst $(OBJ),.err_out,$@)
 	grep -q "$(shell grep ERROR_MUST_CONTAIN $^ | sed -e 's/#define ERROR_MUST_CONTAIN "//' -e 's/"$$//')" $(subst $(OBJ),.err_out,$@)
 	touch $@
+
+
+include $(wildcard $(OBJDIR)*/*.d $(OBJDIR)*.d)
