@@ -131,6 +131,8 @@ int main(int argc, const char ** argv) {
 				avg_frame += threads[i].avg_frame;
 			}
 		}
+
+		parser.postprocess(avg_frame);
 	} else if(parser.error() == "") {
 		std::cerr << "Couldn't open " << opts.in_video << ".\n";
 		return 1;

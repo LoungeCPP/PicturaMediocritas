@@ -117,6 +117,10 @@ namespace pictura_mediocritas {
 		/// Run through every frame, calling `callback()` after initialising it.
 		bool process(const std::function<bool()> & callback);
 
+		/// Finalise the specified framebuffer, which must have a &-returning operator[] valid in [0; width * height * channels) ∩ ℤ
+		template <class FB>
+		void postprocess(FB & fb);
+
 		/// Get the specified colour fragment.
 		///
 		/// Valid inside [0; width * height * channels) ∩ ℤ, undefined behaviour thereoutside.
@@ -127,12 +131,21 @@ namespace pictura_mediocritas {
 			std::size_t idx;
 			std::size_t frame_num;
 		};
-		template<class = void>
+		template <class = void>
 		std::uint8_t operator[](const deref & idx) const noexcept;
 	};
 
 
-	template<class>
+	template <class FB>
+	void pictura_mediocritas::ffmpeg_parser::postprocess(FB & fb) {
+		for(auto y = 0; y < out_frames[0]->height / 2; ++y)
+			for(auto x = 0; x < out_frames[0]->width; ++x)
+				for(auto c = 0u; c < channels; ++c)
+					fb.swap((y * out_frames[0]->width + x) * channels + c, ((out_frames[0]->height - 1 - y) * out_frames[0]->width + x) * channels + c);
+	}
+
+
+	template <class>
 	std::uint8_t pictura_mediocritas::ffmpeg_parser::operator[](const deref & idx) const noexcept {
 		auto & out_frame = out_frames[idx.frame_num % out_frames.size()];
 		return out_frame->data[0][idx.idx];

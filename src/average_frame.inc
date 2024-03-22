@@ -88,6 +88,11 @@ std::array<AccT, Channels> pictura_mediocritas::average_frame<AccT, Channels>::p
 	return res;
 }
 
+template <class AccT, std::size_t Channels>
+void pictura_mediocritas::average_frame<AccT, Channels>::swap(std::size_t idx1, std::size_t idx2) {
+	std::swap(pixels[idx1], pixels[idx2]);
+}
+
 
 template <class AccTL, std::size_t ChannelsL, class AccTR, std::size_t ChannelsR>
 bool pictura_mediocritas::operator==(const average_frame<AccTL, ChannelsL> & lhs, const average_frame<AccTR, ChannelsR> & rhs) {

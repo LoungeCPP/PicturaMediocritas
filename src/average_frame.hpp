@@ -108,6 +108,9 @@ namespace pictura_mediocritas {
 		///
 		/// The behaviour is undefined if `idx` ∉ [0; width * height) ∩ ℤ.
 		std::array<AccT, Channels> pixel(std::size_t idx) const;
+
+		/// Swap pixels at the given coordinates, both within [0; width * height * Channels) ∩ ℤ.
+		void swap(std::size_t idx1, std::size_t idx2);
 	};
 
 

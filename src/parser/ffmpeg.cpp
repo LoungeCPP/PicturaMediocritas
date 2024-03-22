@@ -96,13 +96,6 @@ bool pictura_mediocritas::ffmpeg_parser::receive_frame(const std::function<bool(
 			return true;
 		}
 
-		// TODO: is there a more performant way of flipping the video?
-		for(auto y = 0; y < out_frame->height / 2; ++y)
-			for(auto x = 0; x < out_frame->width; ++x)
-				for(auto c = 0u; c < channels; ++c)
-					std::swap(out_frame->data[0][(y * out_frame->width + x) * channels + c],
-					          out_frame->data[0][((out_frame->height - 1 - y) * out_frame->width + x) * channels + c]);
-
 		if(!callback())
 			return true;
 	}
