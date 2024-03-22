@@ -30,12 +30,6 @@
 #include <sys/types.h>
 
 
-pictura_mediocritas::quickscope_wrapper::~quickscope_wrapper() {
-	if(func)
-		func();
-}
-
-
 bool pictura_mediocritas::file_exists(const char * path) {
 	struct stat info;
 	return stat(path, &info) == 0 && info.st_mode & S_IFREG;

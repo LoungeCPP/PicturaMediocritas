@@ -26,7 +26,7 @@
 using namespace std::literals;
 
 
-std::tuple<pictura_mediocritas::options, int, std::string> pictura_mediocritas::options::parse(int argc, const char * const * argv) {
+std::tuple<pictura_mediocritas::options, int, std::string> pictura_mediocritas::options::parse(int, const char * const * argv) {
 	auto self = *argv ? *argv : "pictura-mediocritas";
 	if(*argv)
 		++argv;

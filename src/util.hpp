@@ -24,19 +24,20 @@
 #pragma once
 
 
-#include <cstdint>
-#include <functional>
-#include <string>
 #include <FreeImage.h>
+#include <cstdint>
+#include <string>
 #include <vector>
 
 
 namespace pictura_mediocritas {
+	template <class F>
 	struct quickscope_wrapper {
-		std::function<void()> func;
-
-		~quickscope_wrapper();
+		F func;
+		~quickscope_wrapper() { func(); }
 	};
+	template <class F>
+	quickscope_wrapper(F) -> quickscope_wrapper<F>;
 
 
 	bool file_exists(const char * path);
