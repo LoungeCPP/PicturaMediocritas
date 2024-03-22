@@ -30,16 +30,6 @@
 #include <sys/types.h>
 
 
-bool pictura_mediocritas::file_exists(const char * path) {
-	struct stat info;
-	return stat(path, &info) == 0 && info.st_mode & S_IFREG;
-}
-
-bool pictura_mediocritas::directory_exists(const char * path) {
-	struct stat info;
-	return stat(path, &info) == 0 && info.st_mode & S_IFDIR;
-}
-
 bool pictura_mediocritas::has_extension(const char * path, const char * ext) {
 	const auto path_len = std::strlen(path);
 	auto path_ext       = path + path_len;
