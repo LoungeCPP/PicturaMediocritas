@@ -27,10 +27,6 @@
 			"path": "build-tests"
 		},
 		{
-			"name": "External code",
-			"path": "ext"
-		},
-		{
 			"file_include_patterns":
 			[
 				"*Makefile*",

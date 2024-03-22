@@ -22,7 +22,7 @@
 
 #include "../test_util.hpp"
 #include "util.hpp"
-#include <catch.hpp>
+#include <doctest/doctest.h>
 #include <fstream>
 #include <string>
 
@@ -30,7 +30,7 @@
 using namespace std::literals;
 
 
-TEST_CASE("util::deduce_image_format() -- nonexistant", "[util]") {
+TEST_CASE("util::deduce_image_format() -- nonexistant") {
 	REQUIRE(pictura_mediocritas::deduce_image_format("image.bMP") == FIF_BMP);
 
 	REQUIRE(pictura_mediocritas::deduce_image_format("image.Ico") == FIF_ICO);
@@ -56,7 +56,7 @@ TEST_CASE("util::deduce_image_format() -- nonexistant", "[util]") {
 	REQUIRE(pictura_mediocritas::deduce_image_format("image.WeBp") == FIF_WEBP);
 }
 
-TEST_CASE("util::deduce_image_format() -- unrecognised", "[util]") {
+TEST_CASE("util::deduce_image_format() -- unrecognised") {
 	REQUIRE(pictura_mediocritas::deduce_image_format("README.md") == FIF_UNKNOWN);
 	REQUIRE(pictura_mediocritas::deduce_image_format("Makefile") == FIF_UNKNOWN);
 }

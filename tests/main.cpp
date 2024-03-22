@@ -20,14 +20,12 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#define CATCH_CONFIG_MAIN
-#include <catch.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include <doctest/doctest.h>
 
 #include "test_util.hpp"
 #include <cstdlib>
 #include <string>
-#include <tclap/MultiArg.h>
-#include <tclap/OptionalUnlabeledTracker.h>
 
 const char * temp_dir() {
 	for(auto e : {"TEMP", "TMP"})
@@ -71,9 +69,4 @@ void make_directory_recursive(const char * path) {
 			c = '/';
 		}
 	make_last_dir(tmp.c_str());
-}
-
-// Will fail spuriously otherwise, becasuse statics :angery:
-void reset_TCLAP() {
-	TCLAP::OptionalUnlabeledTracker::alreadyOptional() = false;
 }

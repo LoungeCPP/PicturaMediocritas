@@ -21,16 +21,16 @@
 
 
 #include "util.hpp"
-#include <catch.hpp>
+#include <doctest/doctest.h>
 
 
-TEST_CASE("util::switch_extenstion() -- with extension", "[util]") {
+TEST_CASE("util::switch_extenstion() -- with extension") {
 	REQUIRE(pictura_mediocritas::switch_extenstion("gif_load/test.GIf", "png") == "gif_load/test.png");
 	REQUIRE(pictura_mediocritas::switch_extenstion("test.png", "png") == "test.png");
 	REQUIRE(pictura_mediocritas::switch_extenstion("README.md", "png") == "README.png");
 }
 
-TEST_CASE("util::switch_extenstion() -- no extension", "[util]") {
+TEST_CASE("util::switch_extenstion() -- no extension") {
 	REQUIRE(pictura_mediocritas::switch_extenstion("gif_load/test", "png") == "gif_load/test.png");
 	REQUIRE(pictura_mediocritas::switch_extenstion("test", "png") == "test.png");
 	REQUIRE(pictura_mediocritas::switch_extenstion("README", "png") == "README.png");

@@ -26,8 +26,7 @@ include configMakefile
 # If ffmpeg autodetects something for your system, you can put it here to link to
 FFMPEG_PREREQUESITE_LD_LIBS := bz2 lzma z
 LDAR := $(PIC) $(LNCXXAR) $(foreach l,swscale avformat avcodec avutil freeimage $(FFMPEG_PREREQUESITE_LD_LIBS) $(OS_LD_LIBS),-l$(l))
-VERAR := $(foreach l,PICTURA_MEDIOCRITAS CATCH2,-D$(l)_VERSION='$($(l)_VERSION)')
-INCAR := $(foreach l,$(foreach l,Catch2/single_include,ext/$(l)) $(foreach l,ffmpeg,$(BLDDIR)$(l)/include),-isystem$(l))
+VERAR := $(foreach l,PICTURA_MEDIOCRITAS,-D$(l)_VERSION='$($(l)_VERSION)')
 TEST_SOURCES := $(sort $(wildcard tests/*.cpp tests/**/*.cpp tests/**/**/*.cpp tests/**/**/**/*.cpp))
 BUILD_TEST_SOURCES := $(sort $(wildcard build-tests/*.cpp build-tests/**/*.cpp build-tests/**/**/*.cpp build-tests/**/**/**/*.cpp))
 SOURCES := $(sort $(wildcard src/*.cpp src/**/*.cpp src/**/**/*.cpp src/**/**/**/*.cpp))
@@ -56,14 +55,14 @@ $(OUTDIR)pictura-mediocritas-tests$(EXE) : $(subst tests/,$(BLDDIR)test_obj/,$(s
 
 $(OBJDIR)%$(OBJ) : $(SRCDIR)%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXAR) $(INCAR) $(VERAR) -c -o$@ $^
+	$(CXX) $(CXXAR) $(VERAR) -c -o$@ $^
 
 $(BLDDIR)test_obj/%$(OBJ) : tests/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXAR) $(INCAR) -Isrc -c -o$@ $^
+	$(CXX) $(CXXAR) -Isrc -c -o$@ $^
 
 $(BLDDIR)build_test_obj/%$(OBJ) : build-tests/%.cpp
 	@mkdir -p $(dir $@)
-	! $(CXX) $(CXXAR) $(INCAR) -Isrc -c -o$@ $^ 2>$(subst $(OBJ),.err_out,$@)
+	! $(CXX) $(CXXAR) -Isrc -c -o$@ $^ 2>$(subst $(OBJ),.err_out,$@)
 	grep -q "$(shell grep ERROR_MUST_CONTAIN $^ | sed -e 's/#define ERROR_MUST_CONTAIN "//' -e 's/"$$//')" $(subst $(OBJ),.err_out,$@)
 	touch $@

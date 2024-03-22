@@ -24,12 +24,12 @@ ifeq "$(OS)" "Windows_NT"
 	EXE := .exe
 	PIC :=
 	ECHO := /usr/bin/echo
-	OS_LD_LIBS := ncurses ole32 ws2_32
+	OS_LD_LIBS := ole32 ws2_32
 else
 	EXE :=
 	PIC := -fPIC
 	ECHO := echo
-	OS_LD_LIBS := ncurses dl pthread
+	OS_LD_LIBS := dl pthread
 endif
 
 ifneq "$(ADDITIONAL_INCLUDE_DIR)" ""
@@ -47,7 +47,6 @@ endif
 # TODO: uncomment when there's a first tag
 # PICTURA_MEDIOCRITAS_VERSION := "$(patsubst v%,%,$(shell git describe --tags --abbrev=0))"
 PICTURA_MEDIOCRITAS_VERSION := "0.1.0"
-CATCH2_VERSION := "$(patsubst v%,%,$(shell git -C ext/Catch2 describe --tags --abbrev=0))"
 
 OBJ := .o
 ARCH := .a

@@ -20,83 +20,50 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#define CATCH_CONFIG_ENABLE_TUPLE_STRINGMAKER
-#include <catch.hpp>
+#include <doctest/doctest.h>
 
-#include "options/options.hpp"
+#include "options.hpp"
 #include "test_util.hpp"
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <tuple>
-
 
 using namespace std::literals;
 
 
-namespace Catch {
+namespace doctest {
 	template <>
 	struct StringMaker<pictura_mediocritas::options> {
-		static std::string convert(const pictura_mediocritas::options & value) {
-			return "{in_video=\'" + value.in_video + "\', out_image=\'" + value.out_image + "\'}";  //
+		static String convert(const pictura_mediocritas::options & value) {
+			return (((("{in_video=\'"s += value.in_video) += "\', out_image=\'") += value.out_image) + "\'}").c_str();
 		}
 	};
 }
 
+#define TUPLEQ(l_, r_)                         \
+	{                                            \
+		auto l = l_;                               \
+		auto r = r_;                               \
+		REQUIRE(std::get<0>(l) == std::get<0>(r)); \
+		REQUIRE(std::get<1>(l) == std::get<1>(r)); \
+		REQUIRE(std::get<2>(l) == std::get<2>(r)); \
+	}
 
-TEST_CASE("pictura_mediocritas::options::parse() -- not enough args", "[options]") {
-	reset_TCLAP();
-	const char * args[] = {"pictura-mediocritas tests", nullptr};
-	REQUIRE(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args) ==
-	        std::make_tuple(pictura_mediocritas::options{}, 1,
-	                        "pictura-mediocritas tests: error: parsing arguments failed (Required argument missing: in_video) for undefined argument"));
+
+TEST_CASE("pictura_mediocritas::options::parse() -- not enough args") {
+	const char * args[] = {"pictura-mediocritas-tests", nullptr};
+	TUPLEQ(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args),
+	       std::make_tuple(pictura_mediocritas::options{}, 1, "usage: pictura-mediocritas-tests in-video [out-image]"));
 }
 
-TEST_CASE("pictura_mediocritas::options::parse() -- nonexistant input file", "[options][incorrect]") {
-	const auto temp = temp_dir() + "/PicturaMediocritas/options/incorrect/nonexistant-input/"s;
-	make_directory_recursive(temp.c_str());
-
-	const auto nonexistant_file = temp + "nonexistant_file";
-
-	reset_TCLAP();
-	const char * args[] = {"pictura-mediocritas tests", nonexistant_file.c_str(), nullptr};
-	REQUIRE(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args) ==
-	        std::make_tuple(pictura_mediocritas::options{}, 1,
-	                        "pictura-mediocritas tests: error: parsing arguments failed (Value '" + nonexistant_file +
-	                            "' does not meet constraint: existing file) for Argument: (--in_video)"));
+TEST_CASE("pictura_mediocritas::options::parse() -- too many args") {
+	const char * args[] = {"pictura-mediocritas-tests", "in", "out", "extra", nullptr};
+	TUPLEQ(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args),
+	       std::make_tuple(pictura_mediocritas::options{"in", "out"}, 1, "usage: pictura-mediocritas-tests in-video [out-image]"));
 }
 
-TEST_CASE("pictura_mediocritas::options::parse() -- nonexistant output file parent", "[options][incorrect]") {
-	const auto temp = temp_dir() + "/PicturaMediocritas/options/incorrect/nonexistant-input/"s;
-	make_directory_recursive(temp.c_str());
-
-	const auto in_video        = temp + "in_video.avi";
-	const auto unparented_file = temp + "nonexistant_dir/unparented_file";
-	std::ofstream{in_video};
-
-	reset_TCLAP();
-	const char * args[] = {"pictura-mediocritas tests", in_video.c_str(), unparented_file.c_str(), nullptr};
-	REQUIRE(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args) ==
-	        std::make_tuple(pictura_mediocritas::options{}, 1,
-	                        "pictura-mediocritas tests: error: parsing arguments failed (Value '" + unparented_file +
-	                            "' does not meet constraint: creatable file) for Argument: (--out_image)"));
-}
-
-TEST_CASE("pictura_mediocritas::options::parse() -- output file a dir", "[options][incorrect]") {
-	const auto temp = temp_dir() + "/PicturaMediocritas/options/incorrect/nonexistant-input/"s;
-	make_directory_recursive(temp.c_str());
-
-	const auto in_video = temp + "in_video.avi";
-	std::ofstream{in_video};
-
-	reset_TCLAP();
-	const char * args[] = {"pictura-mediocritas tests", in_video.c_str(), temp.c_str(), nullptr};
-	REQUIRE(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args) ==
-	        std::make_tuple(pictura_mediocritas::options{}, 1,
-	                        "pictura-mediocritas tests: error: parsing arguments failed (Value '" + temp +
-	                            "' does not meet constraint: creatable file) for Argument: (--out_image)"));
-}
-
-TEST_CASE("pictura_mediocritas::options::parse() -- correct", "[options]") {
+TEST_CASE("pictura_mediocritas::options::parse() -- correct") {
 	const auto temp = temp_dir() + "/PicturaMediocritas/options/correct/"s;
 	make_directory_recursive(temp.c_str());
 
@@ -107,30 +74,26 @@ TEST_CASE("pictura_mediocritas::options::parse() -- correct", "[options]") {
 	std::ofstream{in_video_ext};
 
 	{
-		reset_TCLAP();
-		const char * args[] = {"pictura-mediocritas tests", in_video.c_str(), nullptr};
-		REQUIRE(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args) ==
-		        std::make_tuple(pictura_mediocritas::options{in_video, in_video + ".png"}, 0, ""));
+		const char * args[] = {"pictura-mediocritas-tests", in_video.c_str(), nullptr};
+		TUPLEQ(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args),
+		       std::make_tuple(pictura_mediocritas::options{in_video, in_video + ".png"}, 0, ""));
 	}
 
 	{
-		reset_TCLAP();
-		const char * args[] = {"pictura-mediocritas tests", in_video_ext.c_str(), nullptr};
-		REQUIRE(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args) ==
-		        std::make_tuple(pictura_mediocritas::options{in_video_ext, in_video + ".png"}, 0, ""));
+		const char * args[] = {"pictura-mediocritas-tests", in_video_ext.c_str(), nullptr};
+		TUPLEQ(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args),
+		       std::make_tuple(pictura_mediocritas::options{in_video_ext, in_video + ".png"}, 0, ""));
 	}
 
 	{
-		reset_TCLAP();
-		const char * args[] = {"pictura-mediocritas tests", in_video.c_str(), out_image.c_str(), nullptr};
-		REQUIRE(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args) ==
-		        std::make_tuple(pictura_mediocritas::options{in_video, out_image}, 0, ""));
+		const char * args[] = {"pictura-mediocritas-tests", in_video.c_str(), out_image.c_str(), nullptr};
+		TUPLEQ(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args),
+		       std::make_tuple(pictura_mediocritas::options{in_video, out_image}, 0, ""));
 	}
 
 	{
-		reset_TCLAP();
-		const char * args[] = {"pictura-mediocritas tests", in_video_ext.c_str(), out_image.c_str(), nullptr};
-		REQUIRE(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args) ==
-		        std::make_tuple(pictura_mediocritas::options{in_video_ext, out_image}, 0, ""));
+		const char * args[] = {"pictura-mediocritas-tests", in_video_ext.c_str(), out_image.c_str(), nullptr};
+		TUPLEQ(pictura_mediocritas::options::parse(sizeof args / sizeof *args - 1, args),
+		       std::make_tuple(pictura_mediocritas::options{in_video_ext, out_image}, 0, ""));
 	}
 }

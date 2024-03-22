@@ -21,20 +21,20 @@
 
 
 #include "util.hpp"
-#include <catch.hpp>
+#include <doctest/doctest.h>
 
 
-TEST_CASE("util::has_extension() -- equadistant", "[util]") {
-	REQUIRE(pictura_mediocritas::has_extension("gif_load/test.GIf", "giF"));
-	REQUIRE(pictura_mediocritas::has_extension("test.pnG", "PnG"));
-	REQUIRE(pictura_mediocritas::has_extension("README.MD", "md"));
+TEST_CASE("util::has_extension() -- equadistant") {
+	REQUIRE(pictura_mediocritas::has_extension("gif_load/test.GIf", "GIF"));
+	REQUIRE(pictura_mediocritas::has_extension("test.pnG", "PNG"));
+	REQUIRE(pictura_mediocritas::has_extension("README.MD", "MD"));
 
-	REQUIRE_FALSE(pictura_mediocritas::has_extension("gif_load/test_GIf", "giF"));
-	REQUIRE_FALSE(pictura_mediocritas::has_extension("test", "PnG"));
+	REQUIRE_FALSE(pictura_mediocritas::has_extension("gif_load/test_GIf", "gif"));
+	REQUIRE_FALSE(pictura_mediocritas::has_extension("test", "gif"));
 }
 
-TEST_CASE("util::has_extension() -- interdistant", "[util]") {
-	REQUIRE_FALSE(pictura_mediocritas::has_extension("gif_load/test.Gf", "giF"));
-	REQUIRE_FALSE(pictura_mediocritas::has_extension("test.", "PnG"));
-	REQUIRE_FALSE(pictura_mediocritas::has_extension("README.MD", "m"));
+TEST_CASE("util::has_extension() -- interdistant") {
+	REQUIRE_FALSE(pictura_mediocritas::has_extension("gif_load/test.Gf", "GIF"));
+	REQUIRE_FALSE(pictura_mediocritas::has_extension("test.", "PNG"));
+	REQUIRE_FALSE(pictura_mediocritas::has_extension("README.MDD", "MD"));
 }

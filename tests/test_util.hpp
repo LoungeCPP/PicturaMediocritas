@@ -22,4 +22,3 @@
 
 void make_directory_recursive(const char * path);
 const char * temp_dir();
-void reset_TCLAP();

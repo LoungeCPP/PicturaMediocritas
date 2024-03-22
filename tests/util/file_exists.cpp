@@ -22,7 +22,7 @@
 
 #include "../test_util.hpp"
 #include "util.hpp"
-#include <catch.hpp>
+#include <doctest/doctest.h>
 #include <fstream>
 #include <string>
 
@@ -30,14 +30,14 @@
 using namespace std::literals;
 
 
-TEST_CASE("util::file_exists() -- nonexistant", "[util]") {
+TEST_CASE("util::file_exists() -- nonexistant") {
 	const auto temp = temp_dir() + "/PicturaMediocritas/util/file_exists/"s;
 	make_directory_recursive(temp.c_str());
 
 	REQUIRE_FALSE(pictura_mediocritas::file_exists((temp + "nonexistant_file").c_str()));
 }
 
-TEST_CASE("util::file_exists() -- existant file", "[util]") {
+TEST_CASE("util::file_exists() -- existant file") {
 	const auto temp = temp_dir() + "/PicturaMediocritas/util/file_exists/"s;
 	make_directory_recursive(temp.c_str());
 
