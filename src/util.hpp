@@ -27,7 +27,6 @@
 #include <FreeImage.h>
 #include <cstdint>
 #include <string>
-#include <vector>
 
 
 namespace pictura_mediocritas {
@@ -43,6 +42,4 @@ namespace pictura_mediocritas {
 	bool has_extension(const char * path, const char * ext);
 	std::string switch_extenstion(const std::string_view & path, const char * new_ext);
 	FREE_IMAGE_FORMAT deduce_image_format(const char * path);
-
-	std::vector<std::uint8_t> read_file(const char * path);
 }

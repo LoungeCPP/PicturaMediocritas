@@ -25,7 +25,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cstring>
-#include <fstream>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -79,18 +78,4 @@ FREE_IMAGE_FORMAT pictura_mediocritas::deduce_image_format(const char * path) {
 		return FIF_WEBP;
 	else
 		return FIF_UNKNOWN;
-}
-
-std::vector<std::uint8_t> pictura_mediocritas::read_file(const char * path) {
-	std::vector<std::uint8_t> ret;
-
-	std::ifstream in_file(path, std::ios::in | std::ios::binary);
-	std::uint8_t buf[1024];
-	in_file.read(static_cast<char *>(static_cast<void *>(buf)), sizeof buf / sizeof *buf);
-	while(in_file.gcount()) {
-		ret.insert(ret.end(), buf, buf + in_file.gcount());
-		in_file.read(static_cast<char *>(static_cast<void *>(buf)), sizeof buf / sizeof *buf);
-	}
-
-	return ret;
 }
