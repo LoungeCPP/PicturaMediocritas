@@ -48,28 +48,21 @@ AccT pictura_mediocritas::average_frame<AccT, Channels>::processed_frames() cons
 	return frames;
 }
 
-#define PROCESS_FRAME_BODY()                    \
-	do {                                          \
-		const auto pixels_len = pixels.size();      \
-		for(std::size_t i = 0; i < pixels_len; ++i) \
-			pixels[i] += frame[i];                    \
-                                                \
-		++frames;                                   \
-	} while(0)
-
 template <class AccT, std::size_t Channels>
 template <class FrameT>
-void pictura_mediocritas::average_frame<AccT, Channels>::process_frame(const FrameT & frame) {
-	PROCESS_FRAME_BODY();
+void pictura_mediocritas::average_frame<AccT, Channels>::process_frame(const FrameT & frame, std::size_t frame_ctr) {
+	const auto pixels_len = pixels.size();
+	for(std::size_t i = 0; i < pixels_len; ++i)
+		pixels[i] += frame[{i, frame_ctr}];
+
+	++frames;
 }
 
 template <class AccT, std::size_t Channels>
 template <class FrameT>
-void pictura_mediocritas::average_frame<AccT, Channels>::process_frame(FrameT & frame) {
-	PROCESS_FRAME_BODY();
+void pictura_mediocritas::average_frame<AccT, Channels>::process_frame(FrameT & frame, std::size_t frame_ctr) {
+	process_frame(const_cast<const FrameT &>(frame), frame_ctr);
 }
-
-#undef PROCESS_FRAME_BODY
 
 template <class AccT, std::size_t Channels>
 AccT pictura_mediocritas::average_frame<AccT, Channels>::operator[](std::size_t idx) const {
