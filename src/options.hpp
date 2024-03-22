@@ -24,6 +24,7 @@
 
 
 #include <string>
+#include <string_view>
 #include <tuple>
 
 
@@ -33,7 +34,7 @@ namespace pictura_mediocritas {
 		/// Path to the video file to analyse.
 		///
 		/// Must exist.
-		std::string in_video;
+		std::string_view in_video;
 		/// Path to the image file to write the result to.
 		///
 		/// Parent directory must exist.

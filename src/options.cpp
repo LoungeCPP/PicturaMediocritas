@@ -21,46 +21,28 @@
 
 
 #include "options.hpp"
-#include "../util.hpp"
-#include "existing_file_constraint.hpp"
-#include "existing_parent_dir_constraint.hpp"
-#include <tclap/CmdLine.h>
-#include <tclap/SwitchArg.h>
-#include <tclap/ValueArg.h>
-
+#include "util.hpp"
 
 using namespace std::literals;
 
 
 std::tuple<pictura_mediocritas::options, int, std::string> pictura_mediocritas::options::parse(int argc, const char * const * argv) {
-	options ret;
+	auto self = *argv ? *argv : "pictura-mediocritas";
+	if(*argv)
+		++argv;
 
-	try {
-		pictura_mediocritas::existing_file_constraint input_video_constraint("input video");
-		pictura_mediocritas::existing_parent_dir_constraint out_image_constraint("output image");
+	options ret{};
+	if(!*argv)
+	usage:
+		return std::make_tuple(ret, 1, ("usage: "s += self) += " in-video [out-image]");
+	ret.in_video = *argv++;
 
-		TCLAP::CmdLine command_line("Pictūra Mediocritas -- like aurea mediocritas, but with frames in a video instead", ' ', PICTURA_MEDIOCRITAS_VERSION);
-		TCLAP::UnlabeledValueArg<std::string> in_video("in_video", "Video to average", true, "", &input_video_constraint, command_line);
-		TCLAP::UnlabeledValueArg<std::string> out_image("out_image", "Image to write the average frame to. Default: in_video.png", false, "", &out_image_constraint,
-		                                                command_line);
-
-		command_line.setExceptionHandling(false);
-		command_line.parse(argc, argv);
-
-		ret.in_video = in_video;
-
-		if(out_image.getValue().empty())
-			ret.out_image = switch_extenstion(ret.in_video, "png");
-		else
-			ret.out_image = out_image;
-	} catch(const TCLAP::ArgException & e) {
-		auto arg_id = e.argId();
-		if(arg_id == " ")
-			arg_id = "undefined argument";
-		return std::make_tuple(ret, 1, std::string(argv[0]) + ": error: parsing arguments failed (" + e.error() + ") for " + arg_id);
-	} catch(const TCLAP::ExitException & e) {
-		return std::make_tuple(ret, e.getExitStatus() ? e.getExitStatus() : 1, "");
-	}
+	if(*argv) {
+		ret.out_image = *argv++;
+		if(*argv)
+			goto usage;
+	} else
+		ret.out_image = switch_extenstion(ret.in_video, "png");
 
 	return std::make_tuple(ret, 0, ""s);
 }
