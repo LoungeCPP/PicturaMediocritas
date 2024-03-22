@@ -20,8 +20,6 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#include "progressbar/progressbar.hpp"
-
 #include "average_frame.hpp"
 #include "options/options.hpp"
 #include "output_image.hpp"
@@ -46,33 +44,27 @@ int main(int argc, const char ** argv) {
 	}
 	const auto opts = std::move(std::get<0>(opts_r));
 
-#ifdef _WIN32
-	CoInitialize(nullptr);
-#endif
 
 	FreeImage_Initialise();
 	pictura_mediocritas::quickscope_wrapper freeimage_deinitialiser{FreeImage_DeInitialise};
 
 	pictura_mediocritas::average_frame_u64 avg_frame(0, 0);
 
-	pictura_mediocritas::ffmpeg_parser parser(opts.in_video.c_str(), decltype(avg_frame)::channels);
+	pictura_mediocritas::ffmpeg_parser parser(opts.in_video.data(), decltype(avg_frame)::channels);
 	if(parser) {
-		std::unique_ptr<pictura_mediocritas::progressbar> progress;
 		if(!parser.process([&]() {
-			   if(!progress)
-				   progress = std::make_unique<pictura_mediocritas::progressbar>("Processing " + opts.in_video + ' ', parser.length());
 			   if(avg_frame.size().first == 0)
 				   avg_frame = decltype(avg_frame)(parser.size());
 
 			   avg_frame.process_frame(parser);
-			   progress->inc();
+			   write(2, ".", 1);
 
 			   return true;
 		   })) {
 			std::cerr << "\nParsing " << opts.in_video << " failed: " << *parser.error() << '\n';
 			return 1;
 		} else
-			progress->finish();
+			write(2, "\n", 1);
 	} else if(parser.error() == "") {
 		std::cerr << "Couldn't open " << opts.in_video << ".\n";
 		return 1;
@@ -82,7 +74,7 @@ int main(int argc, const char ** argv) {
 	}
 
 
-	std::cout << "\nWriting to " << opts.out_image << '\n';
+	std::cout << "Writing to " << opts.out_image << '\n';
 	switch(pictura_mediocritas::output_image(avg_frame.size(), decltype(avg_frame)::channels, avg_frame, opts.out_image.c_str())) {
 		case pictura_mediocritas::output_image_result_t::ok:
 			break;

@@ -85,7 +85,7 @@ namespace pictura_mediocritas {
 		std::unique_ptr<AVFrame, av_frame_deleter> out_frame;
 
 		int best_stream;
-		AVCodec * best_codec;
+		const AVCodec * best_codec;
 		std::size_t channels;
 
 		error_class_t error_class;
