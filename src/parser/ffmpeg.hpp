@@ -82,7 +82,7 @@ namespace pictura_mediocritas {
 		std::unique_ptr<AVFrame, av_frame_deleter> orig_frame;
 		std::unique_ptr<AVCodecContext, av_codec_context_deleter> best_codec_ctx;
 		std::unique_ptr<SwsContext, sws_context_deleter> colour_conv_ctx;
-		std::unique_ptr<AVFrame, av_frame_deleter> out_frame;
+		std::vector<std::unique_ptr<AVFrame, av_frame_deleter>> out_frames;
 
 		int best_stream;
 		const AVCodec * best_codec;
@@ -97,7 +97,9 @@ namespace pictura_mediocritas {
 
 
 	public:
-		ffmpeg_parser(const char * filename, std::size_t channels);
+		std::size_t frame_num;
+
+		ffmpeg_parser(const char * filename, std::size_t channels, std::size_t runners);
 
 
 		/// Check if this parser is in a valid state.
@@ -121,6 +123,10 @@ namespace pictura_mediocritas {
 		///
 		/// `idx` is in the format `(y * width + x) * decltype(frame)::channels + channel`
 		/// (i.e. the one required by `average_frame`).
-		std::uint8_t operator[](std::size_t idx) const noexcept;
+		struct deref {
+			std::size_t idx;
+			std::size_t frame_num;
+		};
+		std::uint8_t operator[](const deref & idx) const noexcept;
 	};
 }

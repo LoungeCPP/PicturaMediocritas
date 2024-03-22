@@ -58,10 +58,18 @@ void pictura_mediocritas::average_frame<AccT, Channels>::process_frame(const Fra
 	++frames;
 }
 
+
 template <class AccT, std::size_t Channels>
 template <class FrameT>
 void pictura_mediocritas::average_frame<AccT, Channels>::process_frame(FrameT & frame, std::size_t frame_ctr) {
 	process_frame(const_cast<const FrameT &>(frame), frame_ctr);
+}
+
+template <class AccT, std::size_t Channels>
+pictura_mediocritas::average_frame<AccT, Channels> & pictura_mediocritas::average_frame<AccT, Channels>::operator+=(const average_frame & partial) {
+	std::transform(std::begin(pixels), std::end(pixels), std::begin(partial.pixels), std::begin(pixels), std::plus());
+	frames += partial.frames;
+	return *this;
 }
 
 template <class AccT, std::size_t Channels>

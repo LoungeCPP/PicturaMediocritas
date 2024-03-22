@@ -27,7 +27,6 @@
 using namespace std::literals;
 
 
-
 void pictura_mediocritas::av_format_context_deleter::operator()(AVFormatContext * ctx) const noexcept {
 	avformat_close_input(&ctx);
 }
@@ -65,6 +64,8 @@ bool pictura_mediocritas::ffmpeg_parser::send_packet(AVPacket * pkt) noexcept {
 
 bool pictura_mediocritas::ffmpeg_parser::receive_frame(const std::function<bool()> & callback) noexcept {
 	while((error_value = avcodec_receive_frame(best_codec_ctx.get(), orig_frame.get())) >= 0) {
+		++frame_num;
+		auto & out_frame = out_frames[frame_num % out_frames.size()];
 		if(out_frame->width == 0) {
 			out_frame->width  = orig_frame->width;
 			out_frame->height = orig_frame->height;
@@ -124,8 +125,8 @@ std::string pictura_mediocritas::ffmpeg_parser::error_str() const {
 	return buf;
 }
 
-pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::size_t c)
-      : best_stream(-69), best_codec(nullptr), channels(c), error_class(error_class_t::none), error_value(0) {
+pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::size_t c, std::size_t runners)
+      : best_stream(-69), best_codec(nullptr), channels(c), error_class(error_class_t::none), error_value(0), frame_num(-1) {
 	AVFormatContext * container_in = nullptr;
 	if((error_value = avformat_open_input(&container_in, filename, nullptr, nullptr)) != 0) {
 		error_class = error_class_t::open_input;
@@ -165,21 +166,26 @@ pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::si
 		return;
 	}
 
-	out_frame.reset(av_frame_alloc());
-	if(!out_frame)
-		return;
+	for(std::size_t i = 0; i < runners; ++i) {
+		out_frames.emplace_back(av_frame_alloc());
+		if(!out_frames.back())
+			return;
+	}
 
 	switch(channels) {
 		case 1:
-			out_frame->format = AV_PIX_FMT_GRAY8;
+			for(auto && out_frame : out_frames)
+				out_frame->format = AV_PIX_FMT_GRAY8;
 			break;
 
 		case 3:
-			out_frame->format = AV_PIX_FMT_RGB24;
+			for(auto && out_frame : out_frames)
+				out_frame->format = AV_PIX_FMT_RGB24;
 			break;
 
 		case 4:
-			out_frame->format = AV_PIX_FMT_RGBA;
+			for(auto && out_frame : out_frames)
+				out_frame->format = AV_PIX_FMT_RGBA;
 			break;
 
 		default:
@@ -190,7 +196,9 @@ pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::si
 }
 
 pictura_mediocritas::ffmpeg_parser::operator bool() const noexcept {
-	return packet && orig_frame && best_codec_ctx && out_frame && (error_class == error_class_t::none && error_value >= 0);
+	return packet && orig_frame && best_codec_ctx &&
+	       std::all_of(std::begin(out_frames), std::end(out_frames), [&](auto && out_frame) { return bool(out_frame); }) &&
+	       (error_class == error_class_t::none && error_value >= 0);
 }
 
 std::optional<std::string> pictura_mediocritas::ffmpeg_parser::error() const {
@@ -275,7 +283,7 @@ std::optional<std::string> pictura_mediocritas::ffmpeg_parser::error() const {
 	if(!best_codec_ctx)
 		return "Couldn't allocate codec context."s;
 
-	if(!out_frame)
+	if(!out_frames.back())
 		return "Couldn't allocate output frame."s;
 
 	return std::nullopt;
@@ -327,9 +335,10 @@ bool pictura_mediocritas::ffmpeg_parser::process(const std::function<bool()> & c
 	return true;
 }
 
-std::uint8_t pictura_mediocritas::ffmpeg_parser::operator[](std::size_t idx) const noexcept {
+std::uint8_t pictura_mediocritas::ffmpeg_parser::operator[](const deref & idx) const noexcept {
+	auto & out_frame = out_frames[idx.frame_num % out_frames.size()];
 	if(out_frame && out_frame->data[0])
-		return out_frame->data[0][idx];
+		return out_frame->data[0][idx.idx];
 	else
 		return -1;
 }

@@ -26,8 +26,11 @@
 #include "parser/ffmpeg.hpp"
 #include "util.hpp"
 #include <FreeImage.h>
+#include <atomic>
 #include <cassert>
 #include <iostream>
+#include <pthread.h>
+#include <thread>
 #include <unistd.h>
 
 extern "C" {
@@ -48,23 +51,66 @@ int main(int argc, const char ** argv) {
 	FreeImage_Initialise();
 	pictura_mediocritas::quickscope_wrapper freeimage_deinitialiser{FreeImage_DeInitialise};
 
+#define MAXTHREADS 8u
 	pictura_mediocritas::average_frame_u64 avg_frame(0, 0);
+	auto thread_cnt = std::clamp(std::thread::hardware_concurrency(), 1u, MAXTHREADS);
 
-	pictura_mediocritas::ffmpeg_parser parser(opts.in_video.data(), decltype(avg_frame)::channels);
+	pictura_mediocritas::ffmpeg_parser parser(opts.in_video.data(), decltype(avg_frame)::channels, thread_cnt);
 	if(parser) {
+		struct thread {
+			pictura_mediocritas::average_frame_u64 avg_frame;
+			std::thread thread;
+			pthread_barrier_t barrier;
+			std::atomic<std::size_t> cur_frame_num;
+			std::atomic_flag done;
+		};
+		thread threads[MAXTHREADS] = {{{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}},{{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}};
 		if(!parser.process([&]() {
-			   if(avg_frame.size().first == 0)
+			   if(avg_frame.size().first == 0) {
 				   avg_frame = decltype(avg_frame)(parser.size());
 
-			   avg_frame.process_frame(parser);
-			   write(2, ".", 1);
+				   for(auto i = 0u; i < thread_cnt; ++i) {
+					   threads[i].avg_frame = decltype(avg_frame)(parser.size());
+					   while(pthread_barrier_init(&threads[i].barrier, nullptr, 2))
+						   ;
+					   threads[i].thread = std::thread{[&, i = i] {
+						   char id     = '0' + i;
+						   auto & self = threads[i];
+
+						   pthread_barrier_wait(&self.barrier);
+						   for(;;) {
+							   pthread_barrier_wait(&self.barrier);
+							   if(self.done.test())
+								   break;
+							   auto frame = self.cur_frame_num.load(std::memory_order_relaxed);
+							   self.avg_frame.process_frame(parser, frame);
+							   write(2, &id, 1);
+							   pthread_barrier_wait(&self.barrier);
+						   }
+					   }};
+				   }
+			   }
+
+			   auto & thread = threads[parser.frame_num % thread_cnt];
+			   pthread_barrier_wait(&thread.barrier);
+			   thread.cur_frame_num.store(parser.frame_num, std::memory_order_relaxed);
+			   pthread_barrier_wait(&thread.barrier);
 
 			   return true;
 		   })) {
 			std::cerr << "\nParsing " << opts.in_video << " failed: " << *parser.error() << '\n';
 			return 1;
-		} else
+		} else {
 			write(2, "\n", 1);
+
+			for(auto i = 0u; i < thread_cnt; ++i) {
+				threads[i].done.test_and_set();
+				pthread_barrier_wait(&threads[i].barrier);
+				pthread_barrier_wait(&threads[i].barrier);
+				threads[i].thread.join();
+				avg_frame += threads[i].avg_frame;
+			}
+		}
 	} else if(parser.error() == "") {
 		std::cerr << "Couldn't open " << opts.in_video << ".\n";
 		return 1;

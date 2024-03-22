@@ -160,12 +160,26 @@ TEST_CASE("pictura_mediocritas::average_frame::operator!=()") {
 	REQUIRE_FALSE(pictura_mediocritas::average_frame_u64(1920, 1080) != pictura_mediocritas::average_frame_u64(std::make_pair(1920, 1080)));
 }
 
+namespace {
+	template<std::size_t N>
+	struct faux {
+		std::uint8_t data[N];
+
+		struct idx {
+			std::size_t i, _;
+		};
+		const std::uint8_t & operator[](const struct idx & idx) const {
+			return data[idx.i];
+		}
+	};
+}
+
 TEST_CASE("pictura_mediocritas::average_frame::processed_frames()") {
 	pictura_mediocritas::average_frame<std::uint64_t, 1> frame(1, 1);
 	for(int i = 0; i < 10; ++i) {
 		REQUIRE(frame.processed_frames() == i);
-		const std::uint8_t f[] = {static_cast<std::uint8_t>('0' + i)};
-		frame.process_frame(f);
+		faux<1> f{static_cast<std::uint8_t>('0' + i)};
+		frame.process_frame(f, 0);
 		REQUIRE(frame.processed_frames() == i + 1);
 	}
 }
@@ -178,8 +192,8 @@ TEST_CASE("pictura_mediocritas::average_frame::operator[]()") {
 	for(auto i = 0u; i < 256; ++i) {
 		acc += i;
 
-		const std::uint8_t f[] = {static_cast<std::uint8_t>(i)};
-		frame.process_frame(f);
+		faux<1> f{static_cast<std::uint8_t>(i)};
+		frame.process_frame(f, 0);
 		REQUIRE(frame[0] == acc / (i + 1));
 	}
 }
@@ -194,8 +208,8 @@ TEST_CASE("pictura_mediocritas::average_frame::pixel()") {
 		acc_inc += i;
 		acc_dec += 255 - i;
 
-		const std::uint8_t f[] = {static_cast<std::uint8_t>(i), static_cast<std::uint8_t>(255 - i)};
-		frame.process_frame(f);
+		faux<2> f{static_cast<std::uint8_t>(i), static_cast<std::uint8_t>(255 - i)};
+		frame.process_frame(f, 0);
 		REQUIRE(frame.pixel(0) == (std::array<std::uint64_t, 2>{acc_inc / (i + 1), acc_dec / (i + 1)}));
 	}
 }
