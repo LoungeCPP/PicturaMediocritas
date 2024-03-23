@@ -145,6 +145,8 @@ pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::si
 		return;
 	}
 
+	av_dump_format(container.get(), 0, filename, false);
+
 	orig_frame.reset(av_frame_alloc());
 	if(!orig_frame)
 		return;
