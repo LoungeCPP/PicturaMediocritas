@@ -23,12 +23,10 @@
 ifeq "$(OS)" "Windows_NT"
 	EXE := .exe
 	PIC :=
-	ECHO := /usr/bin/echo
 	OS_LD_LIBS :=
 else
 	EXE :=
 	PIC := -fPIC
-	ECHO := echo
 	OS_LD_LIBS := pthread
 endif
 
@@ -44,13 +42,6 @@ else
 	LNCXXAR :=
 endif
 
-# TODO: uncomment when there's a first tag
-# PICTURA_MEDIOCRITAS_VERSION := "$(patsubst v%,%,$(shell git describe --tags --abbrev=0))"
-PICTURA_MEDIOCRITAS_VERSION := "0.1.0"
-
-OBJ := .o
-ARCH := .a
-AR := ar
 CXXAR := -g -MD -O3 -fomit-frame-pointer -march=native -std=c++20 -pedantic -Wall -Wextra -Wno-missing-field-initializers -pipe $(INCCXXAR) $(PIC)
 
 OUTDIR := out/

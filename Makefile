@@ -47,28 +47,28 @@ run-tests : $(OUTDIR)pictura-mediocritas-tests$(EXE)
 
 exe : $(OUTDIR)pictura-mediocritas$(EXE)
 tests : $(OUTDIR)pictura-mediocritas-tests$(EXE)
-no-build-tests : $(subst build-tests/,$(BLDDIR)build_test_obj/,$(subst .cpp,$(OBJ),$(BUILD_TEST_SOURCES)))
+no-build-tests : $(subst build-tests/,$(BLDDIR)build_test_obj/,$(subst .cpp,.o,$(BUILD_TEST_SOURCES)))
 
 
-$(OUTDIR)pictura-mediocritas$(EXE) : $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,$(OBJ),$(SOURCES)))
+$(OUTDIR)pictura-mediocritas$(EXE) : $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,.o,$(SOURCES)))
 	$(CXX) $(CXXAR) -o$@ $^ $(PIC) $(LDAR)
 
-$(OUTDIR)pictura-mediocritas-tests$(EXE) : $(subst tests/,$(BLDDIR)test_obj/,$(subst .cpp,$(OBJ),$(TEST_SOURCES))) $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,$(OBJ),$(filter-out src/main.cpp,$(SOURCES))))
+$(OUTDIR)pictura-mediocritas-tests$(EXE) : $(subst tests/,$(BLDDIR)test_obj/,$(subst .cpp,.o,$(TEST_SOURCES))) $(subst $(SRCDIR),$(OBJDIR),$(subst .cpp,.o,$(filter-out src/main.cpp,$(SOURCES))))
 	$(CXX) $(CXXAR) -o$@ $^ $(PIC) $(LDAR)
 
 
-$(OBJDIR)%$(OBJ) : $(SRCDIR)%.cpp
+$(OBJDIR)%.o : $(SRCDIR)%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXAR) $(VERAR) -c -o$@ $<
 
-$(BLDDIR)test_obj/%$(OBJ) : tests/%.cpp
+$(BLDDIR)test_obj/%.o : tests/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXAR) -Isrc -c -o$@ $<
 
-$(BLDDIR)build_test_obj/%$(OBJ) : build-tests/%.cpp
+$(BLDDIR)build_test_obj/%.o : build-tests/%.cpp
 	@mkdir -p $(dir $@)
-	! $(CXX) $(CXXAR) -Isrc -c -o$@ $< 2>$(subst $(OBJ),.err_out,$@)
-	grep -q "$(shell grep ERROR_MUST_CONTAIN $^ | sed -e 's/#define ERROR_MUST_CONTAIN "//' -e 's/"$$//')" $(subst $(OBJ),.err_out,$@)
+	! $(CXX) $(CXXAR) -Isrc -c -o$@ $< 2>$(subst .o,.err_out,$@)
+	grep -q "$(shell grep ERROR_MUST_CONTAIN $^ | sed -e 's/#define ERROR_MUST_CONTAIN "//' -e 's/"$$//')" $(subst .o,.err_out,$@)
 	touch $@
 
 
