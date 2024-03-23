@@ -55,6 +55,10 @@ bool pictura_mediocritas::ffmpeg_parser::send_packet(AVPacket * pkt) noexcept {
 		case AVERROR_EOF:
 			return false;
 
+		case AVERROR_INVALIDDATA:
+			av_log_set_callback([](void*, int, const char*, va_list) {});
+			return false;
+
 		default:
 			error_value = err;
 			error_class = error_class_t::send_packet;
