@@ -42,6 +42,33 @@ extern "C" {
 using namespace std::chrono_literals;
 
 
+#define STATUSSY(donetest, curframe)                                                                                                   \
+	const auto start = std::chrono::high_resolution_clock::now();                                                                        \
+	std::jthread statussy {                                                                                                              \
+		[&] {                                                                                                                              \
+			auto write = [&](std::size_t done) {                                                                                             \
+				const auto now = std::chrono::high_resolution_clock::now();                                                                    \
+				const auto len = parser.length();                                                                                              \
+				std::fprintf(stderr, "\r%*zu/%zu\t%.4f/s", (int)std::log10(len | 1) + 1, done, len,                                            \
+				             (done / static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count()) * 1000)); \
+			};                                                                                                                               \
+                                                                                                                                       \
+			for(;;) {                                                                                                                        \
+				for(int _ = 0; _ < 10; ++_) {                                                                                                  \
+					std::this_thread::sleep_for(100ms);                                                                                          \
+					if(donetest)                                                                                                                 \
+						goto done;                                                                                                                 \
+				}                                                                                                                              \
+				if(isatty(2))                                                                                                                  \
+					write(curframe);                                                                                                             \
+			}                                                                                                                                \
+		done:                                                                                                                              \
+			write(parser.length() ? parser.length() : curframe);                                                                             \
+			std::fputc('\n', stderr);                                                                                                        \
+		}                                                                                                                                  \
+	}
+
+
 int main(int argc, const char ** argv) {
 	const auto opts_r = pictura_mediocritas::options::parse(argc, argv);
 	if(std::get<1>(opts_r)) {
@@ -61,9 +88,10 @@ int main(int argc, const char ** argv) {
 	if(pictura_mediocritas::has_extension(opts.in_video.data(), "gif")) {
 		pictura_mediocritas::multi_image_parser parser(FreeImage_OpenMultiBitmap(FIF_GIF, opts.in_video.data(), false, true, true, GIF_LOAD256 | GIF_PLAYBACK),
 		                                               decltype(avg_frame)::channels);
-		avg_frame = decltype(avg_frame)(parser.size());
-
-		for(auto i = 0u; i < parser.length(); ++i) {
+		avg_frame     = decltype(avg_frame)(parser.size());
+		std::size_t i = 0;
+		STATUSSY(i == parser.length(), i);
+		for(; i < parser.length(); ++i) {
 			avg_frame.process_frame(parser);
 			parser.next();
 		}
@@ -78,28 +106,7 @@ int main(int argc, const char ** argv) {
 				std::atomic_flag done;
 			};
 			thread threads[MAXTHREADS] = {{{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}};
-			const auto start           = std::chrono::high_resolution_clock::now();
-			std::jthread statussy{[&] {
-				auto write = [&](std::size_t done) {
-					const auto now = std::chrono::high_resolution_clock::now();
-					const auto len = parser.length();
-					std::fprintf(stderr, "\r%*zu/%zu\t%.4f/s", (int)std::log10(len | 1) + 1, done, parser.length(),
-					             (done / static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count()) * 1000));
-				};
-
-				for(;;) {
-					for(int i = 0; i < 10; ++i) {
-						std::this_thread::sleep_for(100ms);
-						if(threads[0].done.test())
-							goto done;
-					}
-					if(isatty(2))
-						write(threads[0].cur_frame_num.load(std::memory_order_relaxed));
-				}
-			done:
-				write(parser.length() ? parser.length() : threads[0].cur_frame_num.load(std::memory_order_relaxed));
-				std::fputc('\n', stderr);
-			}};
+			STATUSSY(threads[0].done.test(), threads[0].cur_frame_num.load(std::memory_order_relaxed));
 			if(!parser.process([&]() {
 				   if(avg_frame.size().first == 0) {
 					   avg_frame = decltype(avg_frame)(parser.size());
