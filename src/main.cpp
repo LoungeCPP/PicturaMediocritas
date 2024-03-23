@@ -24,6 +24,7 @@
 #include "options.hpp"
 #include "output_image.hpp"
 #include "parser/ffmpeg.hpp"
+#include "parser/multi_image.hpp"
 #include "util.hpp"
 #include <FreeImage.h>
 #include <atomic>
@@ -57,88 +58,99 @@ int main(int argc, const char ** argv) {
 	pictura_mediocritas::average_frame_u64 avg_frame(0, 0);
 	auto thread_cnt = std::clamp(std::thread::hardware_concurrency(), 1u, MAXTHREADS);
 
-	pictura_mediocritas::ffmpeg_parser parser(opts.in_video.data(), decltype(avg_frame)::channels, thread_cnt);
-	if(parser) {
-		struct thread {
-			pictura_mediocritas::average_frame_u64 avg_frame;
-			std::thread thread;
-			pthread_barrier_t barrier;
-			std::atomic<std::size_t> cur_frame_num;
-			std::atomic_flag done;
-		};
-		thread threads[MAXTHREADS] = {{{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}};
-		const auto start           = std::chrono::high_resolution_clock::now();
-		std::jthread statussy{[&] {
-			auto write = [&](std::size_t done) {
-				const auto now = std::chrono::high_resolution_clock::now();
-				const auto len = parser.length();
-				std::fprintf(stderr, "\r%*zu/%zu\t%.4f/s", (int)std::log10(len | 1) + 1, done, parser.length(),
-				             (done / static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count()) * 1000));
-			};
+	if(pictura_mediocritas::has_extension(opts.in_video.data(), "gif")) {
+		pictura_mediocritas::multi_image_parser parser(FreeImage_OpenMultiBitmap(FIF_GIF, opts.in_video.data(), false, true, true, GIF_LOAD256 | GIF_PLAYBACK),
+		                                               decltype(avg_frame)::channels);
+		avg_frame = decltype(avg_frame)(parser.size());
 
-			for(;;) {
-				for(int i = 0; i < 10; ++i) {
-					std::this_thread::sleep_for(100ms);
-					if(threads[0].done.test())
-						goto done;
-				}
-				if(isatty(2))
-					write(threads[0].cur_frame_num.load(std::memory_order_relaxed));
-			}
-		done:
-			write(parser.length() ? parser.length() : threads[0].cur_frame_num.load(std::memory_order_relaxed));
-			std::fputc('\n', stderr);
-		}};
-		if(!parser.process([&]() {
-			   if(avg_frame.size().first == 0) {
-				   avg_frame = decltype(avg_frame)(parser.size());
-
-				   for(auto i = 0u; i < thread_cnt; ++i) {
-					   threads[i].avg_frame = decltype(avg_frame)(parser.size());
-					   while(pthread_barrier_init(&threads[i].barrier, nullptr, 2))
-						   ;
-					   threads[i].thread = std::thread{[&, i = i] {
-						   auto & self = threads[i];
-
-						   pthread_barrier_wait(&self.barrier);
-						   for(;;) {
-							   pthread_barrier_wait(&self.barrier);
-							   if(self.done.test())
-								   break;
-							   auto frame = self.cur_frame_num.load(std::memory_order_relaxed);
-							   self.avg_frame.process_frame(parser, frame);
-							   pthread_barrier_wait(&self.barrier);
-						   }
-					   }};
-				   }
-			   }
-
-			   auto & thread = threads[parser.frame_num % thread_cnt];
-			   pthread_barrier_wait(&thread.barrier);
-			   thread.cur_frame_num.store(parser.frame_num, std::memory_order_relaxed);
-			   pthread_barrier_wait(&thread.barrier);
-
-			   return true;
-		   })) {
-			std::cerr << "Parsing " << opts.in_video << " failed: " << *parser.error() << '\n';
-			std::exit(1);
-		} else {
-			for(auto i = 0u; i < thread_cnt; ++i) {
-				threads[i].done.test_and_set();
-				pthread_barrier_wait(&threads[i].barrier);
-				pthread_barrier_wait(&threads[i].barrier);
-				threads[i].thread.join();
-				avg_frame += threads[i].avg_frame;
-			}
+		for(auto i = 0u; i < parser.length(); ++i) {
+			avg_frame.process_frame(parser);
+			parser.next();
 		}
-
-		parser.postprocess(avg_frame);
-	} else if(parser.error() == "") {
-		std::cerr << "Couldn't open " << opts.in_video << ".\n";
-		return 1;
 	} else {
-		std::cerr << "Could not find codec for " << opts.in_video << ": " << *parser.error() << '\n';
-		return 1;
+		pictura_mediocritas::ffmpeg_parser parser(opts.in_video.data(), decltype(avg_frame)::channels, thread_cnt);
+		if(parser) {
+			struct thread {
+				pictura_mediocritas::average_frame_u64 avg_frame;
+				std::thread thread;
+				pthread_barrier_t barrier;
+				std::atomic<std::size_t> cur_frame_num;
+				std::atomic_flag done;
+			};
+			thread threads[MAXTHREADS] = {{{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}};
+			const auto start           = std::chrono::high_resolution_clock::now();
+			std::jthread statussy{[&] {
+				auto write = [&](std::size_t done) {
+					const auto now = std::chrono::high_resolution_clock::now();
+					const auto len = parser.length();
+					std::fprintf(stderr, "\r%*zu/%zu\t%.4f/s", (int)std::log10(len | 1) + 1, done, parser.length(),
+					             (done / static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count()) * 1000));
+				};
+
+				for(;;) {
+					for(int i = 0; i < 10; ++i) {
+						std::this_thread::sleep_for(100ms);
+						if(threads[0].done.test())
+							goto done;
+					}
+					if(isatty(2))
+						write(threads[0].cur_frame_num.load(std::memory_order_relaxed));
+				}
+			done:
+				write(parser.length() ? parser.length() : threads[0].cur_frame_num.load(std::memory_order_relaxed));
+				std::fputc('\n', stderr);
+			}};
+			if(!parser.process([&]() {
+				   if(avg_frame.size().first == 0) {
+					   avg_frame = decltype(avg_frame)(parser.size());
+
+					   for(auto i = 0u; i < thread_cnt; ++i) {
+						   threads[i].avg_frame = decltype(avg_frame)(parser.size());
+						   while(pthread_barrier_init(&threads[i].barrier, nullptr, 2))
+							   ;
+						   threads[i].thread = std::thread{[&, i = i] {
+							   auto & self = threads[i];
+
+							   pthread_barrier_wait(&self.barrier);
+							   for(;;) {
+								   pthread_barrier_wait(&self.barrier);
+								   if(self.done.test())
+									   break;
+								   auto frame = self.cur_frame_num.load(std::memory_order_relaxed);
+								   self.avg_frame.process_frame(parser, frame);
+								   pthread_barrier_wait(&self.barrier);
+							   }
+						   }};
+					   }
+				   }
+
+				   auto & thread = threads[parser.frame_num % thread_cnt];
+				   pthread_barrier_wait(&thread.barrier);
+				   thread.cur_frame_num.store(parser.frame_num, std::memory_order_relaxed);
+				   pthread_barrier_wait(&thread.barrier);
+
+				   return true;
+			   })) {
+				std::cerr << "Parsing " << opts.in_video << " failed: " << *parser.error() << '\n';
+				std::exit(1);
+			} else {
+				for(auto i = 0u; i < thread_cnt; ++i) {
+					threads[i].done.test_and_set();
+					pthread_barrier_wait(&threads[i].barrier);
+					pthread_barrier_wait(&threads[i].barrier);
+					threads[i].thread.join();
+					avg_frame += threads[i].avg_frame;
+				}
+			}
+
+			parser.postprocess(avg_frame);
+		} else if(parser.error() == "") {
+			std::cerr << "Couldn't open " << opts.in_video << ".\n";
+			return 1;
+		} else {
+			std::cerr << "Could not find codec for " << opts.in_video << ": " << *parser.error() << '\n';
+			return 1;
+		}
 	}
 
 

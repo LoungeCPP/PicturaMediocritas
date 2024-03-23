@@ -80,15 +80,15 @@ namespace pictura_mediocritas {
 
 		/// Get a frame from the specified source.
 		///
-		/// The `frame` argument must be indexable by a `{std::size_t, frame_ctr}` where the size_t is in [0; width * height * Channels) ∩ ℤ.
-		template <class FrameT>
-		void process_frame(const FrameT & frame, std::size_t frame_ctr);
+		/// The `frame` argument must be indexable by a `{std::size_t, Additional...}` where the size_t is in [0; width * height * Channels) ∩ ℤ.
+		template <class FrameT, class... Additional>
+		void process_frame(const FrameT & frame, Additional &&... frame_ctr);
 
 		/// Get a frame from the specified source.
 		///
 		/// The `frame` argument must be indexable by a `{std::size_t, frame_ctr}` where the size_t is in [0; width * height * Channels) ∩ ℤ.
-		template <class FrameT>
-		void process_frame(FrameT & frame, std::size_t frame_ctr);
+		template <class FrameT, class... Additional>
+		void process_frame(FrameT & frame, Additional &&... frame_ctr);
 
 		/// Add the values from a partial frame to this one.
 		average_frame & operator+=(const average_frame & partial);
