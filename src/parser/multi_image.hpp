@@ -80,6 +80,45 @@ namespace pictura_mediocritas {
 		///
 		/// `idx` is in the format `(y * width + x) * decltype(frame)::channels + channel`
 		/// (i.e. the one required by `average_frame`).
+		template <class = void>
 		std::uint8_t operator[](std::size_t idx);
 	};
+
+
+	template <class>
+	std::uint8_t pictura_mediocritas::multi_image_parser::operator[](std::size_t idx) {
+		if(!channels)
+			return -1;
+
+		const auto width = size().first;
+		if(!width)
+			return -1;
+
+		const auto channel = idx % channels;  // idx = (y * width + x) * decltype(frame)::channels + channel
+		idx -= channel;                       // idx = (y * width + x) * decltype(frame)::channels
+		idx /= channels;                      // idx =  y * width + x
+		const auto x = idx % width;           //
+		idx -= x;                             // idx =  y * width
+		idx /= width;                         // idx =  y
+		const auto y = idx;                   //
+
+		if(!cached || (cache_x != x || cache_y != y)) {
+			cached  = FreeImage_GetPixelColor(cur_page.get(), x, y, &cache);
+			cache_x = x;
+			cache_y = y;
+		}
+
+		if(cached) [[likely]]
+			switch(channel) {
+				case 0:
+					return cache.rgbRed;
+				case 1:
+					return cache.rgbGreen;
+				case 2:
+					return cache.rgbBlue;
+				case 3:
+					return cache.rgbReserved;
+			}
+		std::terminate();
+	}
 }
