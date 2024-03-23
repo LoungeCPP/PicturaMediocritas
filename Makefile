@@ -28,10 +28,16 @@ VERAR := $(foreach l,PICTURA_MEDIOCRITAS,-D$(l)_VERSION='$($(l)_VERSION)')
 TEST_SOURCES := $(sort $(wildcard tests/*.cpp tests/**/*.cpp tests/**/**/*.cpp tests/**/**/**/*.cpp))
 BUILD_TEST_SOURCES := $(sort $(wildcard build-tests/*.cpp build-tests/**/*.cpp build-tests/**/**/*.cpp build-tests/**/**/**/*.cpp))
 SOURCES := $(sort $(wildcard src/*.cpp src/**/*.cpp src/**/**/*.cpp src/**/**/**/*.cpp))
+PREFIX ?= /usr/local
 
 .PHONY : all clean exe tests no-build-tests run-tests
 
 all : exe tests no-build-tests run-tests
+
+install : exe
+	mkdir -p $(DESTDIR)/$(PREFIX)/bin $(DESTDIR)/$(PREFIX)/share/man/man1
+	cp $(OUTDIR)pictura-mediocritas$(EXE) $(DESTDIR)/$(PREFIX)/bin/
+	gzip -9 < pictura-mediocritas.1 > $(DESTDIR)/$(PREFIX)/share/man/man1/pictura-mediocritas.1.gz
 
 clean :
 	rm -rf $(OUTDIR)
