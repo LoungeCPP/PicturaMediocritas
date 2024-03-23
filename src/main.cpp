@@ -81,10 +81,7 @@ int main(int argc, const char ** argv) {
 	FreeImage_Initialise();
 	pictura_mediocritas::quickscope_wrapper freeimage_deinitialiser{FreeImage_DeInitialise};
 
-#define MAXTHREADS 8u
 	pictura_mediocritas::average_frame_u64 avg_frame(0, 0);
-	auto thread_cnt = std::clamp(std::thread::hardware_concurrency(), 1u, MAXTHREADS);
-
 	if(pictura_mediocritas::has_extension(opts.in_video.data(), "gif")) {
 		pictura_mediocritas::multi_image_parser parser(FreeImage_OpenMultiBitmap(FIF_GIF, opts.in_video.data(), false, true, true, GIF_LOAD256 | GIF_PLAYBACK),
 		                                               decltype(avg_frame)::channels);
@@ -96,6 +93,8 @@ int main(int argc, const char ** argv) {
 			parser.next();
 		}
 	} else {
+#define MAXTHREADS 8u
+		auto thread_cnt = std::clamp(std::thread::hardware_concurrency(), 1u, MAXTHREADS);
 		pictura_mediocritas::ffmpeg_parser parser(opts.in_video.data(), decltype(avg_frame)::channels, thread_cnt);
 		if(parser) {
 			struct thread {

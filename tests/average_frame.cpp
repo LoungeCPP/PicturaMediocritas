@@ -82,7 +82,7 @@ TEST_CASE("pictura_mediocritas::channels") {
 }
 
 TEST_CASE("pictura_mediocritas::value_type") {
-#define TYPES(t)                                                                 \
+#define TYPES(t)                                                                        \
 	REQUIRE((std::is_same<pictura_mediocritas::average_frame<t>::value_type, t>::value)); \
 	REQUIRE((std::is_same<pictura_mediocritas::average_frame<t>::value_type, t>::value)); \
 	REQUIRE((std::is_same<pictura_mediocritas::average_frame<t>::value_type, t>::value)); \
@@ -161,16 +161,25 @@ TEST_CASE("pictura_mediocritas::average_frame::operator!=()") {
 }
 
 namespace {
-	template<std::size_t N>
+	template <std::size_t N>
 	struct faux {
 		std::uint8_t data[N];
 
 		struct idx {
-			std::size_t i, _;
+			std::size_t i;
 		};
-		const std::uint8_t & operator[](const struct idx & idx) const {
-			return data[idx.i];
-		}
+		const std::uint8_t & operator[](const struct idx & idx) const { return data[idx.i]; }
+	};
+
+	template <std::size_t N>
+	struct faux2 {
+		std::uint8_t data[N];
+
+		struct idx {
+			std::size_t i;
+			int _;
+		};
+		const std::uint8_t & operator[](const struct idx & idx) const { return data[idx.i]; }
 	};
 }
 
@@ -179,7 +188,7 @@ TEST_CASE("pictura_mediocritas::average_frame::processed_frames()") {
 	for(int i = 0; i < 10; ++i) {
 		REQUIRE(frame.processed_frames() == i);
 		faux<1> f{static_cast<std::uint8_t>('0' + i)};
-		frame.process_frame(f, 0);
+		frame.process_frame(f);
 		REQUIRE(frame.processed_frames() == i + 1);
 	}
 }
@@ -192,7 +201,7 @@ TEST_CASE("pictura_mediocritas::average_frame::operator[]()") {
 	for(auto i = 0u; i < 256; ++i) {
 		acc += i;
 
-		faux<1> f{static_cast<std::uint8_t>(i)};
+		faux2<1> f{static_cast<std::uint8_t>(i)};
 		frame.process_frame(f, 0);
 		REQUIRE(frame[0] == acc / (i + 1));
 	}
@@ -209,7 +218,7 @@ TEST_CASE("pictura_mediocritas::average_frame::pixel()") {
 		acc_dec += 255 - i;
 
 		faux<2> f{static_cast<std::uint8_t>(i), static_cast<std::uint8_t>(255 - i)};
-		frame.process_frame(f, 0);
+		frame.process_frame(f);
 		REQUIRE(frame.pixel(0) == (std::array<std::uint64_t, 2>{acc_inc / (i + 1), acc_dec / (i + 1)}));
 	}
 }

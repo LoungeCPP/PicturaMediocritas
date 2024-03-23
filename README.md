@@ -22,7 +22,8 @@ Either acquire a binary release from [the releases page](https://github.com/Loun
 or build it yourself:
 
 ```sh
-$ git clone --recursive https://github.com/LoungeCPP/PicturaMediocritas
+# apt install libfreeimage-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
+$ git clone https://github.com/LoungeCPP/PicturaMediocritas
 $ cd PicturaMediocritas
 $ make
 $ install out/pictura-mediocritas $(wherever)
