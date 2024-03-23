@@ -23,9 +23,7 @@
 include configMakefile
 
 
-# If ffmpeg autodetects something for your system, you can put it here to link to
-FFMPEG_PREREQUESITE_LD_LIBS := bz2 lzma z
-LDAR := $(PIC) $(LNCXXAR) $(foreach l,swscale avformat avcodec avutil freeimage $(FFMPEG_PREREQUESITE_LD_LIBS) $(OS_LD_LIBS),-l$(l))
+LDAR := $(PIC) $(LNCXXAR) $(foreach l,swscale avformat avcodec avutil freeimage $(OS_LD_LIBS),-l$(l))
 VERAR := $(foreach l,PICTURA_MEDIOCRITAS,-D$(l)_VERSION='$($(l)_VERSION)')
 TEST_SOURCES := $(sort $(wildcard tests/*.cpp tests/**/*.cpp tests/**/**/*.cpp tests/**/**/**/*.cpp))
 BUILD_TEST_SOURCES := $(sort $(wildcard build-tests/*.cpp build-tests/**/*.cpp build-tests/**/**/*.cpp build-tests/**/**/**/*.cpp))
