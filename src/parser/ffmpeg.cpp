@@ -23,6 +23,7 @@
 
 #include "ffmpeg.hpp"
 #include <cctype>
+#include <algorithm>
 
 using namespace std::literals;
 
