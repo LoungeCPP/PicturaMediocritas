@@ -93,8 +93,11 @@ int main(int argc, const char ** argv) {
 			parser.next();
 		}
 	} else {
-#define MAXTHREADS 8u
-		auto thread_cnt = std::clamp(std::thread::hardware_concurrency(), 1u, MAXTHREADS);
+		auto thread_cnt = std::thread::hardware_concurrency();
+		if(!thread_cnt) {
+			std::cerr << "std::thread::hardware_concurrency() = 0\n";
+			return 1;
+		}
 		pictura_mediocritas::ffmpeg_parser parser(opts.in_video.data(), decltype(avg_frame)::channels, thread_cnt);
 		if(parser) {
 			struct thread {
@@ -104,7 +107,9 @@ int main(int argc, const char ** argv) {
 				std::atomic<std::size_t> cur_frame_num;
 				std::atomic_flag done;
 			};
-			thread threads[MAXTHREADS] = {{{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}, {{0, 0}}};
+			auto threads = reinterpret_cast<thread *>(alloca(thread_cnt * sizeof(thread)));
+			for(std::size_t i = 0; i < thread_cnt; ++i)
+				new(&threads[i]) thread{{0, 0}};
 			STATUSSY(threads[0].done.test(), threads[0].cur_frame_num.load(std::memory_order_relaxed));
 			if(!parser.process([&]() {
 				   if(avg_frame.size().first == 0) {
@@ -150,6 +155,8 @@ int main(int argc, const char ** argv) {
 			}
 
 			parser.postprocess(avg_frame);
+			for(std::size_t i = 0; i < thread_cnt; ++i)
+				threads[i].~thread();
 		} else if(parser.error() == "") {
 			std::cerr << "Couldn't open " << opts.in_video << ".\n";
 			return 1;
