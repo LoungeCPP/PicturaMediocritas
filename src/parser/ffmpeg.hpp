@@ -83,7 +83,7 @@ namespace pictura_mediocritas {
 		std::unique_ptr<AVFrame, av_frame_deleter> orig_frame;
 		std::unique_ptr<AVCodecContext, av_codec_context_deleter> best_codec_ctx;
 		std::unique_ptr<SwsContext, sws_context_deleter> colour_conv_ctx;
-		mutable mpmc<std::pair<std::unique_ptr<AVFrame, av_frame_deleter>, std::size_t>> out_frames;
+		mutable mpmc<std::unique_ptr<AVFrame, av_frame_deleter>> out_frames;
 
 		int best_stream;
 		const AVCodec * best_codec;
@@ -138,7 +138,7 @@ namespace pictura_mediocritas {
 
 	template <class F>
 	void pictura_mediocritas::ffmpeg_parser::consume(F && callback) {
-		while(out_frames.consume([&](auto & out_frame) { callback(out_frame.first.get(), out_frame.second); }))
+		while(out_frames.consume([&](auto & out_frame) { callback(out_frame.get()); }))
 			;
 	}
 }

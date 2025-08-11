@@ -27,7 +27,6 @@
 #include "parser/multi_image.hpp"
 #include "util.hpp"
 #include <FreeImage.h>
-#include <atomic>
 #include <cassert>
 #include <iostream>
 #include <pthread.h>
@@ -103,7 +102,6 @@ int main(int argc, const char ** argv) {
 			struct thread {
 				pictura_mediocritas::average_frame_u64 avg_frame;
 				std::thread thread;
-				std::atomic<std::size_t> cur_frame_num;
 			};
 			bool done{};
 			auto threads = reinterpret_cast<thread *>(alloca(thread_cnt * sizeof(thread)));
@@ -111,16 +109,15 @@ int main(int argc, const char ** argv) {
 				new(&threads[i]) thread{{0, 0}, std::thread{[&, i = i] {
 					                        auto & self = threads[i];
 					                        bool first  = true;
-					                        parser.consume([&](auto frame, auto framenum) {
+					                        parser.consume([&](auto frame) {
 						                        if(std::exchange(first, false)) {
 							                        threads[i].avg_frame = decltype(avg_frame)(parser.size);
 						                        }
 
-						                        self.cur_frame_num.store(framenum, std::memory_order_relaxed);
 						                        self.avg_frame.process_frame(frame->data[0]);
 					                        });
 				                        }}};
-			STATUSSY(done, threads[0].cur_frame_num.load(std::memory_order_relaxed));
+			STATUSSY(done, parser.frame_num);
 			if(!parser.process()) {
 				std::cerr << "Parsing " << opts.in_video << " failed: " << *parser.error() << '\n';
 				std::exit(1);
@@ -128,7 +125,7 @@ int main(int argc, const char ** argv) {
 
 			done      = true;
 			avg_frame = decltype(avg_frame)(parser.size);
-			for(auto i = 0u; i < thread_cnt; ++i){
+			for(auto i = 0u; i < thread_cnt; ++i) {
 				threads[i].thread.join();
 				avg_frame += threads[i].avg_frame;
 			}

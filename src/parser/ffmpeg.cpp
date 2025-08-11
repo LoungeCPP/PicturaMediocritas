@@ -70,12 +70,8 @@ bool pictura_mediocritas::ffmpeg_parser::send_packet(AVPacket * pkt) noexcept {
 
 bool pictura_mediocritas::ffmpeg_parser::receive_frame() noexcept {
 	while((error_value = avcodec_receive_frame(best_codec_ctx.get(), orig_frame.get())) >= 0)
-		if(out_frames.produce([&](auto & out_frame_bundle) {
-			   auto & [out_frame, out_frame_num] = out_frame_bundle;
-
+		if(out_frames.produce([&](auto & out_frame) {
 			   ++frame_num;
-			   out_frame_num = frame_num;
-
 			   if(out_frame->width == 0) {
 				   size.first        = orig_frame->width;
 				   size.second       = orig_frame->height;
@@ -196,7 +192,7 @@ pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::si
 
 	out_frames.populate([&](auto & pending_out_frames) {
 		for(std::size_t i = 0; i < runners * 2; ++i) {
-			auto & [frame, framenum] = pending_out_frames.emplace_front(av_frame_alloc(), -1);
+			auto & frame = pending_out_frames.emplace_front(av_frame_alloc());
 			if(!frame)
 				return;
 
@@ -208,7 +204,7 @@ pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::si
 pictura_mediocritas::ffmpeg_parser::operator bool() const noexcept {
 	bool ok{};
 	return packet && orig_frame && best_codec_ctx &&
-	       (out_frames.populate([&](auto & pending_out_frames) { ok = static_cast<bool>(pending_out_frames.begin()->first); }), ok) &&
+	       (out_frames.populate([&](auto & pending_out_frames) { ok = static_cast<bool>(*pending_out_frames.begin()); }), ok) &&
 	       (error_class == error_class_t::none && error_value >= 0);
 }
 
@@ -294,7 +290,7 @@ std::optional<std::string> pictura_mediocritas::ffmpeg_parser::error() const {
 	if(!best_codec_ctx)
 		return "Couldn't allocate codec context."s;
 
-	if(bool ok{}; out_frames.populate([&](auto & pending_out_frames) { ok = static_cast<bool>(pending_out_frames.begin()->first); }), !ok)
+	if(bool ok{}; out_frames.populate([&](auto & pending_out_frames) { ok = static_cast<bool>(*pending_out_frames.begin()); }), !ok)
 		return "Couldn't allocate output frame."s;
 
 	return std::nullopt;
