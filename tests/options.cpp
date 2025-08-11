@@ -64,14 +64,9 @@ TEST_CASE("pictura_mediocritas::options::parse() -- too many args") {
 }
 
 TEST_CASE("pictura_mediocritas::options::parse() -- correct") {
-	const auto temp = temp_dir() + "/PicturaMediocritas/options/correct/"s;
-	make_directory_recursive(temp.c_str());
-
-	const auto in_video     = temp + "in_video";
-	const auto in_video_ext = temp + "in_video.mp4";
-	const auto out_image    = temp + "out_image.jpeg2000";
-	std::ofstream{in_video};
-	std::ofstream{in_video_ext};
+	const auto in_video     = "/ENOENT/in_video"s;
+	const auto in_video_ext = "/ENOENT/in_video.mp4"s;
+	const auto out_image    = "/ENOENT/out_image.jpeg2000"s;
 
 	{
 		const char * args[] = {"pictura-mediocritas-tests", in_video.c_str(), nullptr};
