@@ -108,13 +108,11 @@ int main(int argc, const char ** argv) {
 			for(std::size_t i = 0; i < thread_cnt; ++i)
 				new(&threads[i]) thread{{0, 0}, std::thread{[&, i = i] {
 					                        auto & self = threads[i];
-					                        bool first  = true;
 					                        parser.consume([&](auto frame) {
-						                        if(std::exchange(first, false)) {
-							                        threads[i].avg_frame = decltype(avg_frame)(parser.size);
-						                        }
+						                        if(!self.avg_frame.size().first)
+							                        self.avg_frame = decltype(avg_frame)(parser.size);
 
-						                        self.avg_frame.process_frame(frame->data[0]);
+						                        self.avg_frame.process_frame(pictura_mediocritas::avframe_indexer<decltype(avg_frame)::channels>{frame});
 					                        });
 				                        }}};
 			STATUSSY(done, parser.frame_num);
@@ -123,16 +121,15 @@ int main(int argc, const char ** argv) {
 				std::exit(1);
 			}
 
-			done      = true;
-			avg_frame = decltype(avg_frame)(parser.size);
+			done = true;
 			for(auto i = 0u; i < thread_cnt; ++i) {
 				threads[i].thread.join();
-				avg_frame += threads[i].avg_frame;
-			}
-
-			parser.postprocess(avg_frame);
-			for(std::size_t i = 0; i < thread_cnt; ++i)
+				if(!i)
+					avg_frame.swap(threads[i].avg_frame);
+				else
+					avg_frame += threads[i].avg_frame;
 				threads[i].~thread();
+			}
 		} else if(parser.error() == "") {
 			std::cerr << "Couldn't open " << opts.in_video << ".\n";
 			return 1;

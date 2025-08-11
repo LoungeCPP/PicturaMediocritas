@@ -80,15 +80,9 @@ namespace pictura_mediocritas {
 
 		/// Get a frame from the specified source.
 		///
-		/// The `frame` argument must be indexable by a `{std::size_t, Additional...}` where the size_t is in [0; width * height * Channels) ∩ ℤ.
+		/// The `frame` argument must be indexable by `{x, y}` and this must yield an iterator of `r,g,b,r,g,b,...` of row-consecutive pixels.
 		template <class FrameT>
 		void process_frame(const FrameT & frame);
-
-		/// Get a frame from the specified source.
-		///
-		/// The `frame` argument must be indexable by a `{std::size_t, frame_ctr}` where the size_t is in [0; width * height * Channels) ∩ ℤ.
-		template <class FrameT>
-		void process_frame(FrameT & frame);
 
 		/// Add the values from a partial frame to this one.
 		average_frame & operator+=(const average_frame & partial);
@@ -109,8 +103,7 @@ namespace pictura_mediocritas {
 		/// The behaviour is undefined if `idx` ∉ [0; width * height) ∩ ℤ.
 		std::array<AccT, Channels> pixel(std::size_t idx) const;
 
-		/// Swap pixels at the given coordinates, both within [0; width * height * Channels) ∩ ℤ.
-		void swap(std::size_t idx1, std::size_t idx2);
+		void swap(average_frame<AccT, Channels> & oth);
 	};
 
 

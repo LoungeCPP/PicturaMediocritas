@@ -121,24 +121,30 @@ namespace pictura_mediocritas {
 		/// Receive processed frames, return when `process()` is drained.
 		template <class F>
 		void consume(F && callback);
-
-		/// Finalise the specified framebuffer, which must have a &-returning operator[] valid in [0; width * height * channels) ∩ ℤ
-		template <class FB>
-		void postprocess(FB & fb);
 	};
-
-
-	template <class FB>
-	void pictura_mediocritas::ffmpeg_parser::postprocess(FB & fb) {
-		for(auto y = 0u; y < size.second / 2; ++y)
-			for(auto x = 0u; x < size.first; ++x)
-				for(auto c = 0u; c < channels; ++c)
-					fb.swap((y * size.first + x) * channels + c, ((size.second - 1 - y) * size.first + x) * channels + c);
-	}
 
 	template <class F>
 	void pictura_mediocritas::ffmpeg_parser::consume(F && callback) {
 		while(out_frames.consume([&](auto & out_frame) { callback(out_frame.get()); }))
 			;
 	}
+
+
+	template <std::size_t channels>
+	struct avframe_indexer {
+		std::uint8_t * plane;
+		int stride;  // In case of video, the data[] pointers can point to the end of image data in order to reverse line order,
+		             // when used in combination with negative values in the linesize[] array.
+		std::uint16_t subheight;
+
+		avframe_indexer(AVFrame * frame) : plane(frame->data[0]), stride(frame->linesize[0]), subheight(frame->height - 1) {}
+
+		struct idx {
+			std::uint16_t x, y;
+		};
+		const std::uint8_t * operator[](idx i) const noexcept {
+			auto start = (subheight - i.y) * stride + i.x * channels;
+			return &plane[start];
+		}
+	};
 }

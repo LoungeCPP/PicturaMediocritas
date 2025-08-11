@@ -41,7 +41,7 @@ void pictura_mediocritas::multi_image_parser::lock_page() {
 }
 
 pictura_mediocritas::multi_image_parser::multi_image_parser(FIMULTIBITMAP * i, std::size_t c)
-      : channels(c), image(i), cur_page(0, freeimage_page_unlocker{i, false}), cur_page_idx(0), pages(0), width(0), height(0), cached(false) {
+      : channels(c), image(i), cur_page(0, freeimage_page_unlocker{i, false}), cur_page_idx(0), pages(0), width(0), height(0) {
 	lock_page();
 }
 

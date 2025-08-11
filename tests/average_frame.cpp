@@ -166,20 +166,9 @@ namespace {
 		std::uint8_t data[N];
 
 		struct idx {
-			std::size_t i;
+			std::uint16_t x, y;
 		};
-		const std::uint8_t & operator[](const struct idx & idx) const { return data[idx.i]; }
-	};
-
-	template <std::size_t N>
-	struct faux2 {
-		std::uint8_t data[N];
-
-		struct idx {
-			std::size_t i;
-			int _;
-		};
-		const std::uint8_t & operator[](const struct idx & idx) const { return data[idx.i]; }
+		const std::uint8_t * operator[](struct idx) const { return data; }
 	};
 }
 
@@ -201,8 +190,8 @@ TEST_CASE("pictura_mediocritas::average_frame::operator[]()") {
 	for(auto i = 0u; i < 256; ++i) {
 		acc += i;
 
-		faux2<1> f{static_cast<std::uint8_t>(i)};
-		frame.process_frame(f, 0);
+		faux<1> f{static_cast<std::uint8_t>(i)};
+		frame.process_frame(f);
 		REQUIRE(frame[0] == acc / (i + 1));
 	}
 }
