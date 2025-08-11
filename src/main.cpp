@@ -103,55 +103,34 @@ int main(int argc, const char ** argv) {
 			struct thread {
 				pictura_mediocritas::average_frame_u64 avg_frame;
 				std::thread thread;
-				pthread_barrier_t barrier;
 				std::atomic<std::size_t> cur_frame_num;
-				std::atomic_flag done;
 			};
+			bool done{};
 			auto threads = reinterpret_cast<thread *>(alloca(thread_cnt * sizeof(thread)));
 			for(std::size_t i = 0; i < thread_cnt; ++i)
-				new(&threads[i]) thread{{0, 0}};
-			STATUSSY(threads[0].done.test(), threads[0].cur_frame_num.load(std::memory_order_relaxed));
-			if(!parser.process([&]() {
-				   if(avg_frame.size().first == 0) {
-					   avg_frame = decltype(avg_frame)(parser.size());
+				new(&threads[i]) thread{{0, 0}, std::thread{[&, i = i] {
+					                        auto & self = threads[i];
+					                        bool first  = true;
+					                        parser.consume([&](auto frame, auto framenum) {
+						                        if(std::exchange(first, false)) {
+							                        threads[i].avg_frame = decltype(avg_frame)(parser.size);
+						                        }
 
-					   for(auto i = 0u; i < thread_cnt; ++i) {
-						   threads[i].avg_frame = decltype(avg_frame)(parser.size());
-						   while(pthread_barrier_init(&threads[i].barrier, nullptr, 2))
-							   ;
-						   threads[i].thread = std::thread{[&, i = i] {
-							   auto & self = threads[i];
-
-							   pthread_barrier_wait(&self.barrier);
-							   for(;;) {
-								   pthread_barrier_wait(&self.barrier);
-								   if(self.done.test())
-									   break;
-								   auto frame = self.cur_frame_num.load(std::memory_order_relaxed);
-								   self.avg_frame.process_frame(parser, frame);
-								   pthread_barrier_wait(&self.barrier);
-							   }
-						   }};
-					   }
-				   }
-
-				   auto & thread = threads[parser.frame_num % thread_cnt];
-				   pthread_barrier_wait(&thread.barrier);
-				   thread.cur_frame_num.store(parser.frame_num, std::memory_order_relaxed);
-				   pthread_barrier_wait(&thread.barrier);
-
-				   return true;
-			   })) {
+						                        self.cur_frame_num.store(framenum, std::memory_order_relaxed);
+						                        self.avg_frame.process_frame(frame->data[0]);
+					                        });
+				                        }}};
+			STATUSSY(done, threads[0].cur_frame_num.load(std::memory_order_relaxed));
+			if(!parser.process()) {
 				std::cerr << "Parsing " << opts.in_video << " failed: " << *parser.error() << '\n';
 				std::exit(1);
-			} else {
-				for(auto i = 0u; i < thread_cnt; ++i) {
-					threads[i].done.test_and_set();
-					pthread_barrier_wait(&threads[i].barrier);
-					pthread_barrier_wait(&threads[i].barrier);
-					threads[i].thread.join();
-					avg_frame += threads[i].avg_frame;
-				}
+			}
+
+			done      = true;
+			avg_frame = decltype(avg_frame)(parser.size);
+			for(auto i = 0u; i < thread_cnt; ++i){
+				threads[i].thread.join();
+				avg_frame += threads[i].avg_frame;
 			}
 
 			parser.postprocess(avg_frame);

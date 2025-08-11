@@ -1,0 +1,3 @@
+[submodule "ext/mpmc_spmc"]
+	path = ext/mpmc_spmc
+	url = https://git.sr.ht/~nabijaczleweli/mpmc_spmc

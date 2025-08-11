@@ -24,6 +24,7 @@
 #pragma once
 
 
+#include "mpmc.hpp"
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -82,7 +83,7 @@ namespace pictura_mediocritas {
 		std::unique_ptr<AVFrame, av_frame_deleter> orig_frame;
 		std::unique_ptr<AVCodecContext, av_codec_context_deleter> best_codec_ctx;
 		std::unique_ptr<SwsContext, sws_context_deleter> colour_conv_ctx;
-		std::vector<std::unique_ptr<AVFrame, av_frame_deleter>> out_frames;
+		mutable mpmc<std::pair<std::unique_ptr<AVFrame, av_frame_deleter>, std::size_t>> out_frames;
 
 		int best_stream;
 		const AVCodec * best_codec;
@@ -92,7 +93,7 @@ namespace pictura_mediocritas {
 		int error_value;
 
 		bool send_packet(AVPacket * pkt) noexcept;
-		bool receive_frame(const std::function<bool()> & callback) noexcept;
+		bool receive_frame() noexcept;
 		std::string error_str() const;
 
 
@@ -108,46 +109,36 @@ namespace pictura_mediocritas {
 		/// Get the error string, or `nullopt` if conversion to bool is `true`.
 		std::optional<std::string> error() const;
 
-		/// Get current frame's size as `{width, height}`, or `{0, 0}` if not yet ready.
-		std::pair<std::size_t, std::size_t> size() const noexcept;
+		/// Current frame's size as `{width, height}`, or `{0, 0}` if not yet ready.
+		std::pair<std::size_t, std::size_t> size;
 
 		/// Get frame count, or `0` if not yet ready.
 		std::size_t length() const noexcept;
 
-		/// Run through every frame, calling `callback()` after initialising it.
-		bool process(const std::function<bool()> & callback);
+		/// Run through every frame, feeding it to pending `consume()`rs.
+		bool process();
+
+		/// Receive processed frames, return when `process()` is drained.
+		template <class F>
+		void consume(F && callback);
 
 		/// Finalise the specified framebuffer, which must have a &-returning operator[] valid in [0; width * height * channels) ∩ ℤ
 		template <class FB>
 		void postprocess(FB & fb);
-
-		/// Get the specified colour fragment.
-		///
-		/// Valid inside [0; width * height * channels) ∩ ℤ, undefined behaviour thereoutside.
-		///
-		/// `idx` is in the format `(y * width + x) * decltype(frame)::channels + channel`
-		/// (i.e. the one required by `average_frame`).
-		struct deref {
-			std::size_t idx;
-			std::size_t frame_num;
-		};
-		template <class = void>
-		std::uint8_t operator[](const deref & idx) const noexcept;
 	};
 
 
 	template <class FB>
 	void pictura_mediocritas::ffmpeg_parser::postprocess(FB & fb) {
-		for(auto y = 0; y < out_frames[0]->height / 2; ++y)
-			for(auto x = 0; x < out_frames[0]->width; ++x)
+		for(auto y = 0u; y < size.second / 2; ++y)
+			for(auto x = 0u; x < size.first; ++x)
 				for(auto c = 0u; c < channels; ++c)
-					fb.swap((y * out_frames[0]->width + x) * channels + c, ((out_frames[0]->height - 1 - y) * out_frames[0]->width + x) * channels + c);
+					fb.swap((y * size.first + x) * channels + c, ((size.second - 1 - y) * size.first + x) * channels + c);
 	}
 
-
-	template <class>
-	std::uint8_t pictura_mediocritas::ffmpeg_parser::operator[](const deref & idx) const noexcept {
-		auto & out_frame = out_frames[idx.frame_num % out_frames.size()];
-		return out_frame->data[0][idx.idx];
+	template <class F>
+	void pictura_mediocritas::ffmpeg_parser::consume(F && callback) {
+		while(out_frames.consume([&](auto & out_frame) { callback(out_frame.first.get(), out_frame.second); }))
+			;
 	}
 }

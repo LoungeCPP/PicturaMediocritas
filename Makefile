@@ -24,6 +24,7 @@ include configMakefile
 
 
 LDAR := $(PIC) $(LNCXXAR) $(foreach l,swscale avformat avcodec avutil freeimage $(OS_LD_LIBS),-l$(l))
+INCAR := -Iext/mpmc_spmc
 VERAR := $(foreach l,PICTURA_MEDIOCRITAS,-D$(l)_VERSION='$($(l)_VERSION)')
 TEST_SOURCES := $(sort $(wildcard tests/*.cpp tests/**/*.cpp tests/**/**/*.cpp tests/**/**/**/*.cpp))
 BUILD_TEST_SOURCES := $(sort $(wildcard build-tests/*.cpp build-tests/**/*.cpp build-tests/**/**/*.cpp build-tests/**/**/**/*.cpp))
@@ -59,15 +60,15 @@ $(OUTDIR)pictura-mediocritas-tests$(EXE) : $(subst tests/,$(BLDDIR)test_obj/,$(s
 
 $(OBJDIR)%.o : $(SRCDIR)%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXAR) $(VERAR) -c -o$@ $<
+	$(CXX) $(CXXAR) $(INCAR) $(VERAR) -c -o$@ $<
 
 $(BLDDIR)test_obj/%.o : tests/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXAR) -Isrc -c -o$@ $<
+	$(CXX) $(CXXAR) $(INCAR) -Isrc -c -o$@ $<
 
 $(BLDDIR)build_test_obj/%.o : build-tests/%.cpp
 	@mkdir -p $(dir $@)
-	! $(CXX) $(CXXAR) -Isrc -c -o$@ $< 2>$(subst .o,.err_out,$@)
+	! $(CXX) $(CXXAR) $(INCAR) -Isrc -c -o$@ $< 2>$(subst .o,.err_out,$@)
 	grep -q "$(shell grep ERROR_MUST_CONTAIN $^ | sed -e 's/#define ERROR_MUST_CONTAIN "//' -e 's/"$$//')" $(subst .o,.err_out,$@)
 	touch $@
 
