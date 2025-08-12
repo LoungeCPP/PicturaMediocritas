@@ -23,18 +23,20 @@
 #include "util.hpp"
 #include <doctest/doctest.h>
 
+using namespace std::literals;
+
 
 TEST_CASE("util::has_extension() -- equadistant") {
-	REQUIRE(pictura_mediocritas::has_extension("gif_load/test.GIf", "GIF"));
-	REQUIRE(pictura_mediocritas::has_extension("test.pnG", "PNG"));
-	REQUIRE(pictura_mediocritas::has_extension("README.MD", "MD"));
+	REQUIRE(pictura_mediocritas::has_extension("gif_load/test.GIf"sv, "GIF"sv));
+	REQUIRE(pictura_mediocritas::has_extension("test.pnG"sv, "PNG"sv));
+	REQUIRE(pictura_mediocritas::has_extension("README.MD"sv, "MD"sv));
 
-	REQUIRE_FALSE(pictura_mediocritas::has_extension("gif_load/test_GIf", "gif"));
-	REQUIRE_FALSE(pictura_mediocritas::has_extension("test", "gif"));
+	REQUIRE_FALSE(pictura_mediocritas::has_extension("gif_load/test_GIf"sv, "gif"sv));
+	REQUIRE_FALSE(pictura_mediocritas::has_extension("test"sv, "gif"sv));
 }
 
 TEST_CASE("util::has_extension() -- interdistant") {
-	REQUIRE_FALSE(pictura_mediocritas::has_extension("gif_load/test.Gf", "GIF"));
-	REQUIRE_FALSE(pictura_mediocritas::has_extension("test.", "PNG"));
-	REQUIRE_FALSE(pictura_mediocritas::has_extension("README.MDD", "MD"));
+	REQUIRE_FALSE(pictura_mediocritas::has_extension("gif_load/test.Gf"sv, "GIF"sv));
+	REQUIRE_FALSE(pictura_mediocritas::has_extension("test."sv, "PNG"sv));
+	REQUIRE_FALSE(pictura_mediocritas::has_extension("README.MDD"sv, "MD"sv));
 }

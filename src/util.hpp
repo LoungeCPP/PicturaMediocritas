@@ -26,6 +26,7 @@
 
 #include <FreeImage.h>
 #include <cstdint>
+#include <string_view>
 #include <string>
 
 
@@ -39,7 +40,7 @@ namespace pictura_mediocritas {
 	quickscope_wrapper(F) -> quickscope_wrapper<F>;
 
 
-	bool has_extension(const char * path, const char * ext);
+	bool has_extension(const std::string_view & path, const std::string_view & ext);
 	std::string switch_extenstion(const std::string_view & path, const char * new_ext);
-	FREE_IMAGE_FORMAT deduce_image_format(const char * path);
+	FREE_IMAGE_FORMAT deduce_image_format(const std::string_view & path);
 }

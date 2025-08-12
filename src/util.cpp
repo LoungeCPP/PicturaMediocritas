@@ -23,29 +23,19 @@
 
 #include "util.hpp"
 #include <algorithm>
-#include <cctype>
 #include <cstring>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <strings.h>
+
+using namespace std::literals;
 
 
-bool pictura_mediocritas::has_extension(const char * path, const char * ext) {
-	const auto path_len = std::strlen(path);
-	auto path_ext       = path + path_len;
-	while(*(path_ext - 1) != '.' && path_ext - 1 != path)
-		--path_ext;
-	const auto path_ext_len = std::strlen(path_ext);
-
-	const auto ext_len = std::strlen(ext);
-
-	if(path_ext_len == ext_len) {
-		for(auto i = 0u; i < ext_len; ++i)
-			if(std::tolower(ext[i]) != std::tolower(path_ext[i]))
-				return false;
-
-		return true;
-	} else
+bool pictura_mediocritas::has_extension(const std::string_view & path, const std::string_view & ext) {
+	if(ext.size() + 1 >= path.size())
 		return false;
+	auto lastbit = path.substr(path.size() - (ext.size() + 1));
+	if(lastbit[0] != '.')
+		return false;
+	return !strncasecmp(lastbit.data() + 1, ext.data(), ext.size());
 }
 
 std::string pictura_mediocritas::switch_extenstion(const std::string_view & path, const char * new_ext) {
@@ -53,28 +43,28 @@ std::string pictura_mediocritas::switch_extenstion(const std::string_view & path
 	return (std::string{(dot == std::string::npos) ? path : path.substr(0, dot)} += '.') += new_ext;
 }
 
-FREE_IMAGE_FORMAT pictura_mediocritas::deduce_image_format(const char * path) {
-	if(has_extension(path, "bmp"))
+FREE_IMAGE_FORMAT pictura_mediocritas::deduce_image_format(const std::string_view & path) {
+	if(has_extension(path, "bmp"sv))
 		return FIF_BMP;
-	else if(has_extension(path, "ico"))
+	else if(has_extension(path, "ico"sv))
 		return FIF_ICO;
-	else if(has_extension(path, "jpg") || has_extension(path, "jpeg"))
+	else if(has_extension(path, "jpg"sv) || has_extension(path, "jpeg"sv))
 		return FIF_JPEG;
-	else if(has_extension(path, "jng"))
+	else if(has_extension(path, "jng"sv))
 		return FIF_JNG;
-	else if(has_extension(path, "png"))
+	else if(has_extension(path, "png"sv))
 		return FIF_PNG;
-	else if(has_extension(path, "tga") || has_extension(path, "targa"))
+	else if(has_extension(path, "tga"sv) || has_extension(path, "targa"sv))
 		return FIF_TARGA;
-	else if(has_extension(path, "tiff"))
+	else if(has_extension(path, "tiff"sv))
 		return FIF_TIFF;
-	else if(has_extension(path, "gif"))
+	else if(has_extension(path, "gif"sv))
 		return FIF_GIF;
-	else if(has_extension(path, "jpeg2000"))
+	else if(has_extension(path, "jpeg2000"sv))
 		return FIF_J2K;
-	else if(has_extension(path, "jp2"))
+	else if(has_extension(path, "jp2"sv))
 		return FIF_JP2;
-	else if(has_extension(path, "webp"))
+	else if(has_extension(path, "webp"sv))
 		return FIF_WEBP;
 	else
 		return FIF_UNKNOWN;

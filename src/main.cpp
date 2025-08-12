@@ -39,6 +39,7 @@ extern "C" {
 }
 
 using namespace std::chrono_literals;
+using namespace std::literals;
 
 
 #define STATUSSY(donetest, curframe)                                                                                                   \
@@ -81,7 +82,7 @@ int main(int argc, const char ** argv) {
 	pictura_mediocritas::quickscope_wrapper freeimage_deinitialiser{FreeImage_DeInitialise};
 
 	pictura_mediocritas::average_frame_u64 avg_frame(0, 0);
-	if(pictura_mediocritas::has_extension(opts.in_video.data(), "gif")) {
+	if(pictura_mediocritas::has_extension(opts.in_video, "gif"sv)) {
 		pictura_mediocritas::multi_image_parser parser(FreeImage_OpenMultiBitmap(FIF_GIF, opts.in_video.data(), false, true, true, GIF_LOAD256 | GIF_PLAYBACK),
 		                                               decltype(avg_frame)::channels);
 		avg_frame     = decltype(avg_frame)(parser.size());

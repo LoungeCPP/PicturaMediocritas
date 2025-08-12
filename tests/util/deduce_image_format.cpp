@@ -20,43 +20,42 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#include "../test_util.hpp"
 #include "util.hpp"
 #include <doctest/doctest.h>
 #include <fstream>
 #include <string>
-
+#include <string_view>
 
 using namespace std::literals;
 
 
 TEST_CASE("util::deduce_image_format() -- nonexistant") {
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.bMP") == FIF_BMP);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.bMP"sv) == FIF_BMP);
 
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.Ico") == FIF_ICO);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.Ico"sv) == FIF_ICO);
 
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.jPg") == FIF_JPEG);
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.jpeg") == FIF_JPEG);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.jPg"sv) == FIF_JPEG);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.jpeg"sv) == FIF_JPEG);
 
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.jNg") == FIF_JNG);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.jNg"sv) == FIF_JNG);
 
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.PNg") == FIF_PNG);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.PNg"sv) == FIF_PNG);
 
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.tGa") == FIF_TARGA);
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.tarGa") == FIF_TARGA);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.tGa"sv) == FIF_TARGA);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.tarGa"sv) == FIF_TARGA);
 
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.tIFf") == FIF_TIFF);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.tIFf"sv) == FIF_TIFF);
 
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.gIF") == FIF_GIF);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.gIF"sv) == FIF_GIF);
 
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.jpEg2000") == FIF_J2K);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.jpEg2000"sv) == FIF_J2K);
 
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.jP2") == FIF_JP2);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.jP2"sv) == FIF_JP2);
 
-	REQUIRE(pictura_mediocritas::deduce_image_format("image.WeBp") == FIF_WEBP);
+	REQUIRE(pictura_mediocritas::deduce_image_format("image.WeBp"sv) == FIF_WEBP);
 }
 
 TEST_CASE("util::deduce_image_format() -- unrecognised") {
-	REQUIRE(pictura_mediocritas::deduce_image_format("README.md") == FIF_UNKNOWN);
-	REQUIRE(pictura_mediocritas::deduce_image_format("Makefile") == FIF_UNKNOWN);
+	REQUIRE(pictura_mediocritas::deduce_image_format("README.md"sv) == FIF_UNKNOWN);
+	REQUIRE(pictura_mediocritas::deduce_image_format("Makefile"sv) == FIF_UNKNOWN);
 }
