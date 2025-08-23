@@ -125,10 +125,12 @@ int main(int argc, const char ** argv) {
 			done = true;
 			for(auto i = 0u; i < thread_cnt; ++i) {
 				threads[i].thread.join();
-				if(!i)
-					avg_frame.swap(threads[i].avg_frame);
-				else
-					avg_frame += threads[i].avg_frame;
+				if(threads[i].avg_frame.size().first) {
+					if(!i)
+						avg_frame.swap(threads[i].avg_frame);
+					else
+						avg_frame += threads[i].avg_frame;
+				}
 				threads[i].~thread();
 			}
 		} else if(parser.error() == "") {
