@@ -69,6 +69,8 @@ matrix:
     - env: LANGUAGE=Ruby DEPLOY=true DEPLOY_FILE="$TRAVIS_BUILD_DIR/../pictura-mediocritas-man-$TRAVIS_TAG.tbz2"
       language: ruby
       rvm: "2.2"
+  allow_failures:
+    - env: LANGUAGE=C++ CXX="clang++-5.0 -stdlib=libc++" CC=clang-5.0
 
 before_install:
   - if [ "$TRAVIS_SECURE_ENV_VARS" == "true" ]; then
@@ -167,7 +169,7 @@ after_success:
 deploy:
   provider: releases
   api-key:
-    secure: stxnyBJJBRCIL5CdzwQeCGwrZ9Bh1Z8jZA4ojKZ/1RzXyAV/h1g2tQnbbW7cUA7QT4AvITwRDN5CW6KzZfUAqUr2Kz0XoMuE7+zuyFUihVt6Vmilr//ZUpkTbektfJDUvfYA4P4kna9S2zUfE1sW3wGheq5lbi70UVN39Zc1d8aE2dO25DP4Hcqf2HH/sHRA+U7uyMtD75qPlGgcl4YPQaPVyuVfIthMaXYYr2Pt21qIOoMib2oMIKJWLc9ftkBQaIvs9Zt0sECMTmQhaO0li8N4ZpaxiUJsSyGxt/ZkydRjDoReJVkQQO+/p4Ed7jQp8TcaBlSmFivNyd18/L06CX2h0BiawftbtEIDC9U1Xi+7VqVWfk2kIK6MqjnY0AtdsAJmQvTq60e7O1lnHkDZTu3tvXR8v+6HQdofeUM6oU75CRXgmO+MTtxQkyB1v1tDqh7REfYHCO4Q6HKaPVGpJP5XOuY0qN9vragTP5UlVgVDYi0+jzX8zrL+gE0SKm55lYkYrfNqheCvTref1No4K92Lt5fjQbT2LSjp3b/NESvcLHiL42S7KrkhI3qFqJwEYPVXl/3eGyRp/EpGUaNdFh9eZECTBOAaGLVtHQlVgfUpoST+9fBiFuRHmSexlV19Ke3NPa2h229kuIBshFWxq3Dlk9ZJMpWXKzJII36/TAA=
+    secure: jKKJHvnWlVzfHVn67OcSbtJTiDSHpAu7bMRs0Of64q2fqb6EAjL0l8+9ckgY1TnLU9AIXZrFJzkrt45t7qbWPb2ZsAUxd/O7n6cZuh+TDYkYj3SUsfNx9CAV8Gxb86GVogg1mXDuqYS+FKCK1lsfSV0y50bMkLz5oVtLP6Iq8/JkCugCO/XQluXCoE6tDH/lCVl3yLsgtG66Trv7bufLS05D9bnEAg/UvI4W4oxucnxRpwd0rSRCHi+rmaSjDVRFIvGTj8RzLtGm8SJTeedulT5CWXr7pvXxo19cnWSyXeRhjjrnV2aM3JEtDYerqeIW0e1TyRSs2q9oUmMFs1fQ2ZGwm5fLjeYSB2jVU637mdUnh/SmrvXQ5mv+IZTI/RejUm16qLqH4/IFlxkGmAwyhLtj0A+thula+PuZ2RMd2FfymVGvEklC7/hyWTjE3kJESc2uv0xph9iceJrLaQI4qXI++uJPVJntto7hoBEJWTLcc0nVvigjMLkCfmfifzb/KwItYyImHHjCs8dCYc771Oup3jEqHDprmiJtizp+mAi3cNIr3mCtspcll7cxELg9RBR9AUIhyql0FtfH1qatFQYB8KYyUMeLdmJRzkz023dCMznenkgIm/Pg7KzQjGxsRePJMA4qR4FxMOGnnvZMwziHh7DWQu6y7bpfMh8NVAw=
   file: "$DEPLOY_FILE"
   skip_cleanup: true
   on:

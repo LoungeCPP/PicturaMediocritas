@@ -22,7 +22,11 @@
 
 
 #include "ffmpeg.hpp"
+#include "../util.hpp"
+#include <algorithm>
 #include <cctype>
+
+using namespace std::literals;
 
 
 void pictura_mediocritas::av_format_context_deleter::operator()(AVFormatContext * ctx) const noexcept {
@@ -53,6 +57,10 @@ bool pictura_mediocritas::ffmpeg_parser::send_packet(AVPacket * pkt) noexcept {
 		case AVERROR_EOF:
 			return false;
 
+		case AVERROR_INVALIDDATA:
+			av_log_set_callback(nullptr);
+			return false;
+
 		default:
 			error_value = err;
 			error_class = error_class_t::send_packet;
@@ -60,48 +68,45 @@ bool pictura_mediocritas::ffmpeg_parser::send_packet(AVPacket * pkt) noexcept {
 	}
 }
 
-bool pictura_mediocritas::ffmpeg_parser::receive_frame(const std::function<bool()> & callback) noexcept {
-	while((error_value = avcodec_receive_frame(best_codec_ctx.get(), orig_frame.get())) >= 0) {
-		if(out_frame->width == 0) {
-			out_frame->width  = orig_frame->width;
-			out_frame->height = orig_frame->height;
+bool pictura_mediocritas::ffmpeg_parser::receive_frame() noexcept {
+	while((error_value = avcodec_receive_frame(best_codec_ctx.get(), orig_frame.get())) >= 0)
+		if(out_frames.produce([&](auto & out_frame) {
+			   ++frame_num;
+			   if(out_frame->width == 0) {
+				   size.first        = orig_frame->width;
+				   size.second       = orig_frame->height;
+				   out_frame->width  = orig_frame->width;
+				   out_frame->height = orig_frame->height;
 
-			const auto get_buffer_error = av_frame_get_buffer(out_frame.get(), 32);
-			if(get_buffer_error < 0) {
-				error_class = error_class_t::get_frame_buffer;
-				error_value = get_buffer_error;
-				return true;
-			}
-		}
+				   const auto get_buffer_error = av_frame_get_buffer(out_frame.get(), 32);
+				   if(get_buffer_error < 0) {
+					   error_class = error_class_t::get_frame_buffer;
+					   error_value = get_buffer_error;
+					   return true;
+				   }
+			   }
 
-		// sws_getCachedContext() will free colour_conv_ctx by itself, so we need to be very careful not to do it ourselves,
-		// so we release it first, *then* reset it, otherwise a whole new world of doublefree opens up.
-		const auto new_colour_conv_ctx =
-		    sws_getCachedContext(colour_conv_ctx.get(), orig_frame->width, orig_frame->height, static_cast<AVPixelFormat>(orig_frame->format), out_frame->width,
-		                         out_frame->height, static_cast<AVPixelFormat>(out_frame->format), SWS_BICUBIC, nullptr, nullptr, nullptr);
-		if(new_colour_conv_ctx != colour_conv_ctx.get()) {
-			colour_conv_ctx.release();
-			colour_conv_ctx.reset(new_colour_conv_ctx);
-		}
+			   // sws_getCachedContext() will free colour_conv_ctx by itself, so we need to be very careful not to do it ourselves,
+			   // so we release it first, *then* reset it, otherwise a whole new world of doublefree opens up.
+			   const auto new_colour_conv_ctx =
+			       sws_getCachedContext(colour_conv_ctx.get(), orig_frame->width, orig_frame->height, static_cast<AVPixelFormat>(orig_frame->format),
+			                            out_frame->width, out_frame->height, static_cast<AVPixelFormat>(out_frame->format), SWS_BICUBIC, nullptr, nullptr, nullptr);
+			   if(new_colour_conv_ctx != colour_conv_ctx.get()) {
+				   colour_conv_ctx.release();
+				   colour_conv_ctx.reset(new_colour_conv_ctx);
+			   }
 
-		const auto scale_error =
-		    sws_scale(colour_conv_ctx.get(), orig_frame->data, orig_frame->linesize, 0, orig_frame->height, out_frame->data, out_frame->linesize);
-		if(scale_error <= 0) {
-			error_value = scale_error - 1;
-			error_class = error_class_t::scale;
+			   const auto scale_error =
+			       sws_scale(colour_conv_ctx.get(), orig_frame->data, orig_frame->linesize, 0, orig_frame->height, out_frame->data, out_frame->linesize);
+			   if(scale_error <= 0) {
+				   error_value = scale_error - 1;
+				   error_class = error_class_t::scale;
+				   return true;
+			   }
+
+			   return false;
+		   }))
 			return true;
-		}
-
-		// TODO: is there a more performant way of flipping the video?
-		for(auto y = 0; y < out_frame->height / 2; ++y)
-			for(auto x = 0; x < out_frame->width; ++x)
-				for(auto c = 0u; c < channels; ++c)
-					std::swap(out_frame->data[0][(y * out_frame->width + x) * channels + c],
-					          out_frame->data[0][((out_frame->height - 1 - y) * out_frame->width + x) * channels + c]);
-
-		if(!callback())
-			return true;
-	}
 
 	switch(error_value) {
 		case AVERROR(EAGAIN):
@@ -121,8 +126,8 @@ std::string pictura_mediocritas::ffmpeg_parser::error_str() const {
 	return buf;
 }
 
-pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::size_t c)
-      : best_stream(-69), best_codec(nullptr), channels(c), error_class(error_class_t::none), error_value(0) {
+pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::size_t c, std::size_t runners)
+      : best_stream(-69), best_codec(nullptr), channels(c), error_class(error_class_t::none), error_value(0), frame_num(-1), size(0, 0) {
 	AVFormatContext * container_in = nullptr;
 	if((error_value = avformat_open_input(&container_in, filename, nullptr, nullptr)) != 0) {
 		error_class = error_class_t::open_input;
@@ -144,6 +149,8 @@ pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::si
 		return;
 	}
 
+	av_dump_format(container.get(), 0, filename, false);
+
 	orig_frame.reset(av_frame_alloc());
 	if(!orig_frame)
 		return;
@@ -162,21 +169,18 @@ pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::si
 		return;
 	}
 
-	out_frame.reset(av_frame_alloc());
-	if(!out_frame)
-		return;
-
+	int format;
 	switch(channels) {
 		case 1:
-			out_frame->format = AV_PIX_FMT_GRAY8;
+			format = AV_PIX_FMT_GRAY8;
 			break;
 
 		case 3:
-			out_frame->format = AV_PIX_FMT_RGB24;
+			format = AV_PIX_FMT_RGB24;
 			break;
 
 		case 4:
-			out_frame->format = AV_PIX_FMT_RGBA;
+			format = AV_PIX_FMT_RGBA;
 			break;
 
 		default:
@@ -184,27 +188,41 @@ pictura_mediocritas::ffmpeg_parser::ffmpeg_parser(const char * filename, std::si
 			error_class = error_class_t::set_codec_parameters;
 			return;
 	}
+
+
+	out_frames.populate([&](auto & pending_out_frames) {
+		for(std::size_t i = 0; i < runners * 2; ++i) {
+			auto & frame = pending_out_frames.emplace_front(av_frame_alloc());
+			if(!frame)
+				return;
+
+			frame->format = format;
+		}
+	});
 }
 
 pictura_mediocritas::ffmpeg_parser::operator bool() const noexcept {
-	return packet && orig_frame && best_codec_ctx && out_frame && (error_class == error_class_t::none && error_value >= 0);
+	bool ok{};
+	return packet && orig_frame && best_codec_ctx &&
+	       (out_frames.populate([&](auto & pending_out_frames) { ok = static_cast<bool>(*pending_out_frames.begin()); }), ok) &&
+	       (error_class == error_class_t::none && error_value >= 0);
 }
 
-nonstd::optional<std::string> pictura_mediocritas::ffmpeg_parser::error() const {
+std::optional<std::string> pictura_mediocritas::ffmpeg_parser::error() const {
 	switch(error_class) {
 		case error_class_t::none:
 			break;
 
 		case error_class_t::open_input:
-			return {""};
+			return ""s;
 
 		case error_class_t::find_best_stream:
 			switch(error_value) {
 				case AVERROR_STREAM_NOT_FOUND:
-					return {"No video stream in input."};
+					return "No video stream in input."s;
 
 				case AVERROR_DECODER_NOT_FOUND:
-					return {"No available decoder for input stream."};
+					return "No available decoder for input stream."s;
 
 				default:
 					// Unreachable
@@ -212,77 +230,70 @@ nonstd::optional<std::string> pictura_mediocritas::ffmpeg_parser::error() const 
 			}
 
 		case error_class_t::find_stream_info:
-			return {"Couldn't find best stream info: " + error_str() + '.'};
+			return ("Couldn't find best stream info: "s += error_str()) += '.';
 
 		case error_class_t::set_codec_parameters:
-			return {"Couldn't set codec context parameters: " + error_str() + '.'};
+			return ("Couldn't set codec context parameters: "s += error_str()) += '.';
 
 		case error_class_t::open_codec:
-			return {"Couldn't open codec: " + error_str() + '.'};
+			return ("Couldn't open codec: "s += error_str()) += '.';
 
 		case error_class_t::send_packet:
 			switch(error_value) {
 				case AVERROR(EINVAL):
-					return {"Couldn't send packet – invalid video."};
+					return "Couldn't send packet – invalid video."s;
 
 				case AVERROR(ENOMEM):
-					return {"Couldn't send packet – out of memory."};
+					return "Couldn't send packet – out of memory."s;
 
 				case AVERROR_INVALIDDATA:
-					return {"Couldn't send packet – invalid data."};
+					return "Couldn't send packet – invalid data."s;
 
 				default:
-					return {"Couldn't send packet: " + error_str() + '.'};
+					return ("Couldn't send packet: "s += error_str()) += '.';
 			}
 
 		case error_class_t::receive_frame:
 			switch(error_value) {
 				case AVERROR(EINVAL):
-					return {"Couldn't receive frame – invalid video."};
+					return "Couldn't receive frame – invalid video."s;
 
 				default:
-					return {"Couldn't receive frame: " + error_str() + '.'};
+					return ("Couldn't receive frame: "s += error_str()) += '.';
 			}
 
 		case error_class_t::channel_count:
 			switch(channels) {
 				case 0:
-					return {"Zero-channel video makes no sense."};
+					return "Zero-channel video makes no sense."s;
 
 				default:
-					return {"Invalid channel count: " + error_str() + '.'};
+					return ("Invalid channel count: "s += error_str()) += '.';
 			}
 
 		case error_class_t::read_frame:
-			return {"Couldn't read frame: " + error_str() + '.'};
+			return ("Couldn't read frame: "s += error_str()) += '.';
 
 		case error_class_t::get_frame_buffer:
-			return {"Couldn't get output frame buffer: " + error_str() + '.'};
+			return ("Couldn't get output frame buffer: "s += error_str()) += '.';
 
 		case error_class_t::scale:
-			return {"Couldn't scale image: " + error_str() + '.'};
+			return ("Couldn't scale image: "s += error_str()) += '.';
 	}
 
 	if(!packet)
-		return {"Couldn't allocate packet."};
+		return "Couldn't allocate packet."s;
 
 	if(!orig_frame)
-		return {"Couldn't allocate frame."};
+		return "Couldn't allocate frame."s;
 
 	if(!best_codec_ctx)
-		return {"Couldn't allocate codec context."};
+		return "Couldn't allocate codec context."s;
 
-	if(!out_frame)
-		return {"Couldn't allocate output frame."};
+	if(bool ok{}; out_frames.populate([&](auto & pending_out_frames) { ok = static_cast<bool>(*pending_out_frames.begin()); }), !ok)
+		return "Couldn't allocate output frame."s;
 
-	return nonstd::nullopt;
-}
-
-std::pair<std::size_t, std::size_t> pictura_mediocritas::ffmpeg_parser::size() const noexcept {
-	if(orig_frame)
-		return {orig_frame->width, orig_frame->height};
-	else
-		return {0, 0};
+	return std::nullopt;
 }
 
 std::size_t pictura_mediocritas::ffmpeg_parser::length() const noexcept {
@@ -292,7 +303,9 @@ std::size_t pictura_mediocritas::ffmpeg_parser::length() const noexcept {
 		return 0;
 }
 
-bool pictura_mediocritas::ffmpeg_parser::process(const std::function<bool()> & callback) {
+bool pictura_mediocritas::ffmpeg_parser::process() {
+	quickscope_wrapper eof{[&] { out_frames.hang_up(); }};
+
 	if(!*this)
 		return false;
 
@@ -308,25 +321,19 @@ bool pictura_mediocritas::ffmpeg_parser::process(const std::function<bool()> & c
 			return false;
 		}
 
-		if(receive_frame(callback))
+		if(receive_frame())
 			return false;
 
 		if(send_packet(packet.get()))
 			return false;
 	} while(packet->size);
 
+
 	if(send_packet(nullptr))
 		return false;
 
-	if(receive_frame(callback))
+	if(receive_frame())
 		return false;
 
 	return true;
-}
-
-std::uint8_t pictura_mediocritas::ffmpeg_parser::operator[](std::size_t idx) const noexcept {
-	if(out_frame && out_frame->data[0])
-		return out_frame->data[0][idx];
-	else
-		return -1;
 }

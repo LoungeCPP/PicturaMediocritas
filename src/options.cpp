@@ -20,27 +20,37 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#include "../test_util.hpp"
+#include "options.hpp"
 #include "util.hpp"
-#include <catch.hpp>
-#include <fstream>
-#include <string>
-
 
 using namespace std::literals;
 
 
-TEST_CASE("util::file_exists() -- nonexistant", "[util]") {
-	const auto temp = temp_dir() + "/PicturaMediocritas/util/file_exists/"s;
-	make_directory_recursive(temp.c_str());
+std::tuple<pictura_mediocritas::options, int, std::string> pictura_mediocritas::options::parse(int, const char * const * argv) {
+	auto self = *argv ? *argv : "pictura-mediocritas";
+	if(*argv)
+		++argv;
 
-	REQUIRE_FALSE(pictura_mediocritas::file_exists((temp + "nonexistant_file").c_str()));
+	options ret{};
+	if(!*argv)
+	usage:
+		return std::make_tuple(ret, 1, ("usage: "s += self) += " in-video [out-image]");
+	ret.in_video = *argv++;
+
+	if(*argv) {
+		ret.out_image = *argv++;
+		if(*argv)
+			goto usage;
+	} else
+		ret.out_image = switch_extenstion(ret.in_video, "png");
+
+	return std::make_tuple(ret, 0, ""s);
 }
 
-TEST_CASE("util::file_exists() -- existant file", "[util]") {
-	const auto temp = temp_dir() + "/PicturaMediocritas/util/file_exists/"s;
-	make_directory_recursive(temp.c_str());
+bool pictura_mediocritas::operator==(const options & lhs, const options & rhs) {
+	return lhs.in_video == rhs.in_video && lhs.out_image == rhs.out_image;
+}
 
-	std::ofstream(temp + "file");
-	REQUIRE(pictura_mediocritas::file_exists((temp + "file").c_str()));
+bool pictura_mediocritas::operator!=(const options & lhs, const options & rhs) {
+	return !(lhs == rhs);
 }

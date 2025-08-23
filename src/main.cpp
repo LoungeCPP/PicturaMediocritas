@@ -20,10 +20,8 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#include "progressbar/progressbar.hpp"
-
 #include "average_frame.hpp"
-#include "options/options.hpp"
+#include "options.hpp"
 #include "output_image.hpp"
 #include "parser/ffmpeg.hpp"
 #include "parser/multi_image.hpp"
@@ -31,11 +29,44 @@
 #include <FreeImage.h>
 #include <cassert>
 #include <iostream>
+#include <pthread.h>
+#include <thread>
+#include <unistd.h>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 }
+
+using namespace std::chrono_literals;
+using namespace std::literals;
+
+
+#define STATUSSY(donetest, curframe)                                                                                                   \
+	const auto start = std::chrono::high_resolution_clock::now();                                                                        \
+	std::jthread statussy {                                                                                                              \
+		[&] {                                                                                                                              \
+			auto write = [&](std::size_t done) {                                                                                             \
+				const auto now = std::chrono::high_resolution_clock::now();                                                                    \
+				const auto len = parser.length();                                                                                              \
+				std::fprintf(stderr, "\r%*zu/%zu\t%.4f/s", (int)std::log10(len | 1) + 1, done, len,                                            \
+				             (done / static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count()) * 1000)); \
+			};                                                                                                                               \
+                                                                                                                                       \
+			for(;;) {                                                                                                                        \
+				for(int _ = 0; _ < 10; ++_) {                                                                                                  \
+					std::this_thread::sleep_for(100ms);                                                                                          \
+					if(donetest)                                                                                                                 \
+						goto done;                                                                                                                 \
+				}                                                                                                                              \
+				if(isatty(2))                                                                                                                  \
+					write(curframe);                                                                                                             \
+			}                                                                                                                                \
+		done:                                                                                                                              \
+			write(parser.length() ? parser.length() : curframe);                                                                             \
+			std::fputc('\n', stderr);                                                                                                        \
+		}                                                                                                                                  \
+	}
 
 
 int main(int argc, const char ** argv) {
@@ -46,49 +77,62 @@ int main(int argc, const char ** argv) {
 	}
 	const auto opts = std::move(std::get<0>(opts_r));
 
-#ifdef _WIN32
-	CoInitialize(nullptr);
-#endif
 
 	FreeImage_Initialise();
 	pictura_mediocritas::quickscope_wrapper freeimage_deinitialiser{FreeImage_DeInitialise};
 
 	pictura_mediocritas::average_frame_u64 avg_frame(0, 0);
-
-	if(pictura_mediocritas::has_extension(opts.in_video.c_str(), "gif")) {
-		pictura_mediocritas::multi_image_parser parser(FreeImage_OpenMultiBitmap(FIF_GIF, opts.in_video.c_str(), false, true, true, GIF_LOAD256 | GIF_PLAYBACK),
+	if(pictura_mediocritas::has_extension(opts.in_video, "gif"sv)) {
+		pictura_mediocritas::multi_image_parser parser(FreeImage_OpenMultiBitmap(FIF_GIF, opts.in_video.data(), false, true, true, GIF_LOAD256 | GIF_PLAYBACK),
 		                                               decltype(avg_frame)::channels);
-		pictura_mediocritas::progressbar progress("Processing " + opts.in_video + ' ', parser.length());
-		avg_frame = decltype(avg_frame)(parser.size());
-
-		for(auto i = 0u; i < parser.length(); ++i) {
+		avg_frame     = decltype(avg_frame)(parser.size());
+		std::size_t i = 0;
+		STATUSSY(i == parser.length(), i);
+		for(; i < parser.length(); ++i) {
 			avg_frame.process_frame(parser);
 			parser.next();
-			progress.inc();
 		}
 	} else {
-		av_register_all();
-		avcodec_register_all();
-
-
-		pictura_mediocritas::ffmpeg_parser parser(opts.in_video.c_str(), decltype(avg_frame)::channels);
+		auto thread_cnt = std::thread::hardware_concurrency();
+		if(!thread_cnt) {
+			std::cerr << "std::thread::hardware_concurrency() = 0\n";
+			return 1;
+		}
+		pictura_mediocritas::ffmpeg_parser parser(opts.in_video.data(), decltype(avg_frame)::channels, thread_cnt);
 		if(parser) {
-			std::unique_ptr<pictura_mediocritas::progressbar> progress;
-			if(!parser.process([&]() {
-				   if(!progress)
-					   progress = std::make_unique<pictura_mediocritas::progressbar>("Processing " + opts.in_video + ' ', parser.length());
-				   if(avg_frame.size().first == 0)
-					   avg_frame = decltype(avg_frame)(parser.size());
+			struct thread {
+				pictura_mediocritas::average_frame_u64 avg_frame;
+				std::thread thread;
+			};
+			bool done{};
+			auto threads = reinterpret_cast<thread *>(alloca(thread_cnt * sizeof(thread)));
+			for(std::size_t i = 0; i < thread_cnt; ++i)
+				new(&threads[i]) thread{{0, 0}, std::thread{[&, i = i] {
+					                        auto & self = threads[i];
+					                        parser.consume([&](auto frame) {
+						                        if(!self.avg_frame.size().first)
+							                        self.avg_frame = decltype(avg_frame)(parser.size);
 
-				   avg_frame.process_frame(parser);
-				   progress->inc();
+						                        self.avg_frame.process_frame(pictura_mediocritas::avframe_indexer<decltype(avg_frame)::channels>{frame});
+					                        });
+				                        }}};
+			STATUSSY(done, parser.frame_num);
+			if(!parser.process()) {
+				std::cerr << "Parsing " << opts.in_video << " failed: " << *parser.error() << '\n';
+				std::exit(1);
+			}
 
-				   return true;
-			   })) {
-				std::cerr << "\nParsing " << opts.in_video << " failed: " << *parser.error() << '\n';
-				return 1;
-			} else
-				progress->finish();
+			done = true;
+			for(auto i = 0u; i < thread_cnt; ++i) {
+				threads[i].thread.join();
+				if(threads[i].avg_frame.size().first) {
+					if(!i)
+						avg_frame.swap(threads[i].avg_frame);
+					else
+						avg_frame += threads[i].avg_frame;
+				}
+				threads[i].~thread();
+			}
 		} else if(parser.error() == "") {
 			std::cerr << "Couldn't open " << opts.in_video << ".\n";
 			return 1;
@@ -99,7 +143,7 @@ int main(int argc, const char ** argv) {
 	}
 
 
-	std::cout << "\nWriting to " << opts.out_image << '\n';
+	std::cout << "Writing to " << opts.out_image << '\n';
 	switch(pictura_mediocritas::output_image(avg_frame.size(), decltype(avg_frame)::channels, avg_frame, opts.out_image.c_str())) {
 		case pictura_mediocritas::output_image_result_t::ok:
 			break;

@@ -41,7 +41,7 @@ void pictura_mediocritas::multi_image_parser::lock_page() {
 }
 
 pictura_mediocritas::multi_image_parser::multi_image_parser(FIMULTIBITMAP * i, std::size_t c)
-      : channels(c), image(i), cur_page(0, freeimage_page_unlocker{i, false}), cur_page_idx(0), pages(0), width(0), height(0), cached(false) {
+      : channels(c), image(i), cur_page(0, freeimage_page_unlocker{i, false}), cur_page_idx(0), pages(0), width(0), height(0) {
 	lock_page();
 }
 
@@ -64,42 +64,4 @@ std::size_t pictura_mediocritas::multi_image_parser::length() noexcept {
 void pictura_mediocritas::multi_image_parser::next() {
 	++cur_page_idx;
 	lock_page();
-}
-
-std::uint8_t pictura_mediocritas::multi_image_parser::operator[](std::size_t idx) {
-	if(!channels)
-		return -1;
-
-	const auto width = size().first;
-	if(!width)
-		return -1;
-
-	const auto channel = idx % channels;  // idx = (y * width + x) * decltype(frame)::channels + channel
-	idx -= channel;                       // idx = (y * width + x) * decltype(frame)::channels
-	idx /= channels;                      // idx =  y * width + x
-	const auto x = idx % width;           //
-	idx -= x;                             // idx =  y * width
-	idx /= width;                         // idx =  y
-	const auto y = idx;                   //
-
-	if(!cached || (cache_x != x || cache_y != y)) {
-		cached  = FreeImage_GetPixelColor(cur_page.get(), x, y, &cache);
-		cache_x = x;
-		cache_y = y;
-	}
-
-	if(cached)
-		switch(channel) {
-			case 0:
-				return cache.rgbRed;
-			case 1:
-				return cache.rgbGreen;
-			case 2:
-				return cache.rgbBlue;
-			case 3:
-				return cache.rgbReserved;
-		}
-
-	std::cerr << "Failed to get pixel " << x << 'x' << y << " frame #" << cur_page_idx << ".\n";
-	return -1;
 }

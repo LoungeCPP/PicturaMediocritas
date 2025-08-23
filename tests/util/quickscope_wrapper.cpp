@@ -21,10 +21,10 @@
 
 
 #include "util.hpp"
-#include <catch.hpp>
+#include <doctest/doctest.h>
 
 
-TEST_CASE("util::quickscope_wrapper()", "[util]") {
+TEST_CASE("util::quickscope_wrapper()") {
 	bool updated = false;
 	{
 		pictura_mediocritas::quickscope_wrapper updated_updater{[&]() { updated = true; }};

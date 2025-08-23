@@ -13,6 +13,8 @@ install:
   - bash -lc "pacman --needed --noconfirm -Sy pacman-mirrors"
   - bash -lc "pacman --noconfirm -Syyu"
   - bash -lc "pacman --noconfirm -Su mingw-w64-x86_64-freeimage mingw-w64-x86_64-nasm"
+  -
+  - sed -i "s/FFMPEG_PREREQUESITE_LD_LIBS :=/\0 bcrypt/" Makefile
 
 build: off
 build_script:
@@ -31,7 +33,7 @@ deploy:
   provider: GitHub
   artifact: pictura-mediocritas-v0.1.0.exe
   auth_token:
-    secure: /6TsIkMcI5dtUAvr8RJZxjUMR9uDgFLLZDyNbm5HqNCD0zbuj4TUY2JPIte4F+E7
+    secure: ulV16u9GQNsy21XpNcP46K2SSbTHTv68LK0UGobzLbTEswEPEg0hso5XTpmuwa7Y
   on:
     appveyor_repo_tag: true
 

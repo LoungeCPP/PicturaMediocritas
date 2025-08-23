@@ -3,38 +3,26 @@ Like aurea mediocritas, but with frames in a video instead.
 
 Or, you know, get an average frame from a video.
 
-## [Manpage](https://cdn.rawgit.com/LoungeCPP/PicturaMediocritas/man/pictura-mediocritas.1.html)
+## Usage
 
-## Examples
-
-```sh
-# TODO: concretify
-$ pictura-mediocritas "video.mp4"
+```
+usage: pictura-mediocritas in-video [out-image]
 ```
 
-For details, see the [manpage](https://cdn.rawgit.com/LoungeCPP/PicturaMediocritas/man/pictura-mediocritas.1.html).
+```sh
+$ pictura-mediocritas "video.mp4"
+# Averaged frame in   "video.png"
+
+$ pictura-mediocritas "video.mp4" "video-average.jpg"
+```
 
 ## Installation
 
-Either acquire a binary release from [the releases page](https://github.com/LoungeCPP/PicturaMediocritas/releases),
-or build it yourself:
-
 ```sh
-# You need FreeImage to be includable and linkable
-
-$ git clone --recursive https://github.com/LoungeCPP/PicturaMediocritas
+# apt install  libfreeimage-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev doctest-dev
+# or pacman -S mingw-w64-x86_64-ffmpeg mingw-w64-x86_64-doctest mingw-w64-x86_64-freeimage
+$ git clone https://github.com/LoungeCPP/PicturaMediocritas
 $ cd PicturaMediocritas
-$ make
-$ install out/pictura-mediocritas $(wherever)
+$ make -j
+$ make install
 ```
-
-## Contributing
-
-Imperative commit messages, format your code with clang-format, you know the drill.
-
-Branch names *should* be in the format `{issue}-{name}-{desc}`, where
-`issue` is the issue # this branch closes,
-`name` is your name (or a shorthand, like "nab" for "nabijaczleweli"), and
-`desc` is a few-word description of the changes in the branch (like "rework-dir-listing", "second-time").
-
-Non-FF PRs (ergo, merge commits) are illegal.

@@ -48,28 +48,25 @@ AccT pictura_mediocritas::average_frame<AccT, Channels>::processed_frames() cons
 	return frames;
 }
 
-#define PROCESS_FRAME_BODY()                    \
-	do {                                          \
-		const auto pixels_len = pixels.size();      \
-		for(std::size_t i = 0; i < pixels_len; ++i) \
-			pixels[i] += frame[i];                    \
-                                                \
-		++frames;                                   \
-	} while(0)
-
 template <class AccT, std::size_t Channels>
 template <class FrameT>
 void pictura_mediocritas::average_frame<AccT, Channels>::process_frame(const FrameT & frame) {
-	PROCESS_FRAME_BODY();
+	auto out = std::begin(pixels);
+	for(std::uint16_t y = 0; y < height; ++y) {
+		auto row = frame[{0, y}];
+		for(std::size_t c = 0; c < width * Channels; ++c, ++out, ++row)
+			*out += *row;
+	}
+
+	++frames;
 }
 
 template <class AccT, std::size_t Channels>
-template <class FrameT>
-void pictura_mediocritas::average_frame<AccT, Channels>::process_frame(FrameT & frame) {
-	PROCESS_FRAME_BODY();
+pictura_mediocritas::average_frame<AccT, Channels> & pictura_mediocritas::average_frame<AccT, Channels>::operator+=(const average_frame & partial) {
+	std::transform(std::begin(pixels), std::end(pixels), std::begin(partial.pixels), std::begin(pixels), std::plus());
+	frames += partial.frames;
+	return *this;
 }
-
-#undef PROCESS_FRAME_BODY
 
 template <class AccT, std::size_t Channels>
 AccT pictura_mediocritas::average_frame<AccT, Channels>::operator[](std::size_t idx) const {
@@ -85,6 +82,14 @@ std::array<AccT, Channels> pictura_mediocritas::average_frame<AccT, Channels>::p
 	if(frames != 0)
 		std::transform(pixels.begin() + idx * Channels, pixels.begin() + idx * Channels + Channels, res.begin(), [&](auto && channel) { return channel / frames; });
 	return res;
+}
+
+template <class AccT, std::size_t Channels>
+void pictura_mediocritas::average_frame<AccT, Channels>::swap(pictura_mediocritas::average_frame<AccT, Channels> & oth) {
+	std::swap(width, oth.width);
+	std::swap(height, oth.height);
+	std::swap(frames, oth.frames);
+	std::swap(pixels, oth.pixels);
 }
 
 

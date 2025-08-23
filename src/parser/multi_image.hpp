@@ -41,6 +41,44 @@ namespace pictura_mediocritas {
 		void operator()(FIBITMAP * page) const noexcept;
 	};
 
+	namespace {
+		struct multi_image_iterator {
+			std::uint16_t x, y;
+			std::uint8_t channels;
+			FIBITMAP * cur_page;
+			std::uint8_t nextchan = -1;
+			RGBQUAD cache;
+
+			multi_image_iterator & operator++() {
+				if(++nextchan == channels) {
+					++x;
+					nextchan = -1;
+				}
+				return *this;
+			}
+			std::uint8_t operator*() {
+				if(nextchan == static_cast<std::uint8_t>(-1)) {
+					nextchan = 0;
+					if(!FreeImage_GetPixelColor(cur_page, x, y, &cache)) [[unlikely]]
+						std::terminate();
+				}
+
+				switch(nextchan) {
+					case 0:
+						return cache.rgbRed;
+					case 1:
+						return cache.rgbGreen;
+					case 2:
+						return cache.rgbBlue;
+					case 3:
+						return cache.rgbReserved;
+					default:
+						__builtin_unreachable();
+				}
+			}
+		};
+	}
+
 	class multi_image_parser {
 	private:
 		std::size_t channels;
@@ -52,11 +90,6 @@ namespace pictura_mediocritas {
 		std::size_t pages;
 		std::size_t width;
 		std::size_t height;
-
-		bool cached;
-		RGBQUAD cache;
-		std::size_t cache_x;
-		std::size_t cache_y;
 
 		void lock_page();
 
@@ -80,6 +113,12 @@ namespace pictura_mediocritas {
 		///
 		/// `idx` is in the format `(y * width + x) * decltype(frame)::channels + channel`
 		/// (i.e. the one required by `average_frame`).
-		std::uint8_t operator[](std::size_t idx);
+		struct idx {
+			std::uint16_t x, y;
+		};
+		template <class = void>
+		multi_image_iterator operator[](idx i) const {
+			return {i.x, i.y, static_cast<std::uint8_t>(channels), cur_page.get()};
+		}
 	};
 }

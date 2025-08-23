@@ -1,0 +1,34 @@
+.\" SPDX-License-Identifier: 0BSD
+.\"
+.Dd March 23, 2024
+.Dt PICTŪRA-MEDIOCRITAS 1
+.Os
+.
+.Sh NAME
+.Nm pictura-mediocritas
+.Nd average video frames into single image
+.Sh SYNOPSIS
+.Nm
+.Ar video
+.Op Ar image
+.
+.Sh DESCRIPTION
+Like aurea mediocritas, but with frames in a video instead:
+averages
+.Ar video
+.Pq which may be in GIF, or any Xr ffmpeg 1 Ns -understood, format
+into
+.Ar image
+(which defaults to
+.Ar video
+but with the "extension" replaced with
+.Pa .png ) .
+.
+.Sh AUTHORS
+.An наб Aq Mt nabijaczleweli@nabijaczleweli.xyz
+.
+.Sh REPORTING BUGS
+.Lk https://github.com/LoungeCPP/PicturaMediocritas/issues
+.
+.Sh SEE ALSO
+.Lk https://github.com/LoungeCPP/PicturaMediocritas

@@ -20,26 +20,37 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#include "../test_util.hpp"
-#include "util.hpp"
-#include <catch.hpp>
-#include <fstream>
+#pragma once
+
+
 #include <string>
+#include <string_view>
+#include <tuple>
 
 
-using namespace std::literals;
+namespace pictura_mediocritas {
+	/// Representation of command-line configurable application parameters.
+	struct options {
+		/// Path to the video file to analyse.
+		///
+		/// Must exist.
+		std::string_view in_video;
+		/// Path to the image file to write the result to.
+		///
+		/// Parent directory must exist.
+		///
+		/// Default: `in_video` with extension replaced with `"png"`.
+		std::string out_image;
 
 
-TEST_CASE("util::directory_exists() -- nonexistant", "[util]") {
-	const auto temp = temp_dir() + "/PicturaMediocritas/util/directory_exists/"s;
-	make_directory_recursive(temp.c_str());
+		/// Attempt to parse command-line arguments.
+		///
+		/// On success, returns `{parsed_opts, 0, whatever}`.
+		///
+		/// On error, returns `{_invalid_, exit code != 0, error message}`.
+		static std::tuple<options, int, std::string> parse(int argc, const char * const * argv);
+	};
 
-	REQUIRE_FALSE(pictura_mediocritas::directory_exists((temp + "nonexistant_dir").c_str()));
-}
-
-TEST_CASE("util::directory_exists() -- existant file", "[util]") {
-	const auto temp = temp_dir() + "/PicturaMediocritas/util/directory_exists/"s;
-	make_directory_recursive(temp.c_str());
-
-	REQUIRE(pictura_mediocritas::directory_exists(temp.c_str()));
+	bool operator==(const options & lhs, const options & rhs);
+	bool operator!=(const options & lhs, const options & rhs);
 }

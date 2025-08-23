@@ -24,10 +24,11 @@
 #pragma once
 
 
+#include "mpmc.hpp"
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <nonstd/optional.hpp>
+#include <optional>
 #include <string>
 
 extern "C" {
@@ -82,45 +83,68 @@ namespace pictura_mediocritas {
 		std::unique_ptr<AVFrame, av_frame_deleter> orig_frame;
 		std::unique_ptr<AVCodecContext, av_codec_context_deleter> best_codec_ctx;
 		std::unique_ptr<SwsContext, sws_context_deleter> colour_conv_ctx;
-		std::unique_ptr<AVFrame, av_frame_deleter> out_frame;
+		mutable mpmc<std::unique_ptr<AVFrame, av_frame_deleter>> out_frames;
 
 		int best_stream;
-		AVCodec * best_codec;
+		const AVCodec * best_codec;
 		std::size_t channels;
 
 		error_class_t error_class;
 		int error_value;
 
 		bool send_packet(AVPacket * pkt) noexcept;
-		bool receive_frame(const std::function<bool()> & callback) noexcept;
+		bool receive_frame() noexcept;
 		std::string error_str() const;
 
 
 	public:
-		ffmpeg_parser(const char * filename, std::size_t channels);
+		std::size_t frame_num;
+
+		ffmpeg_parser(const char * filename, std::size_t channels, std::size_t runners);
 
 
 		/// Check if this parser is in a valid state.
 		explicit operator bool() const noexcept;
 
 		/// Get the error string, or `nullopt` if conversion to bool is `true`.
-		nonstd::optional<std::string> error() const;
+		std::optional<std::string> error() const;
 
-		/// Get current frame's size as `{width, height}`, or `{0, 0}` if noty yet ready.
-		std::pair<std::size_t, std::size_t> size() const noexcept;
+		/// Current frame's size as `{width, height}`, or `{0, 0}` if not yet ready.
+		std::pair<std::size_t, std::size_t> size;
 
 		/// Get frame count, or `0` if not yet ready.
 		std::size_t length() const noexcept;
 
-		/// Run through every frame, calling `callback()` after initialising it.
-		bool process(const std::function<bool()> & callback);
+		/// Run through every frame, feeding it to pending `consume()`rs.
+		bool process();
 
-		/// Get the specified colour fragment.
-		///
-		/// Valid inside [0; width * height * channels) ∩ ℤ, undefined behaviour thereoutside.
-		///
-		/// `idx` is in the format `(y * width + x) * decltype(frame)::channels + channel`
-		/// (i.e. the one required by `average_frame`).
-		std::uint8_t operator[](std::size_t idx) const noexcept;
+		/// Receive processed frames, return when `process()` is drained.
+		template <class F>
+		void consume(F && callback);
+	};
+
+	template <class F>
+	void pictura_mediocritas::ffmpeg_parser::consume(F && callback) {
+		while(out_frames.consume([&](auto & out_frame) { callback(out_frame.get()); }))
+			;
+	}
+
+
+	template <std::size_t channels>
+	struct avframe_indexer {
+		std::uint8_t * plane;
+		int stride;  // In case of video, the data[] pointers can point to the end of image data in order to reverse line order,
+		             // when used in combination with negative values in the linesize[] array.
+		std::uint16_t subheight;
+
+		avframe_indexer(AVFrame * frame) : plane(frame->data[0]), stride(frame->linesize[0]), subheight(frame->height - 1) {}
+
+		struct idx {
+			std::uint16_t x, y;
+		};
+		const std::uint8_t * operator[](idx i) const noexcept {
+			auto start = (subheight - i.y) * stride + i.x * channels;
+			return &plane[start];
+		}
 	};
 }
